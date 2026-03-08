@@ -1,0 +1,296 @@
+{
+  "name": "igenius-memory",
+  "displayName": "iGenius Memory",
+  "description": "Persistent AI memory for your coding agents. Browse, search, promote, and manage short-term and long-term memories right from VS Code.",
+  "version": "0.1.0",
+  "publisher": "vehoelite",
+  "license": "MIT",
+  "icon": "media/icon.png",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/vehoelite/igenius-vscode"
+  },
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "AI",
+    "Other"
+  ],
+  "keywords": [
+    "ai",
+    "memory",
+    "mcp",
+    "copilot",
+    "agent",
+    "persistent memory",
+    "igenius"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "igenius-memory",
+          "title": "iGenius Memory",
+          "icon": "media/brain.svg"
+        }
+      ]
+    },
+    "views": {
+      "igenius-memory": [
+        {
+          "type": "webview",
+          "id": "igenius.sidebar",
+          "name": "Memory Browser"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "igenius.showBriefing",
+        "title": "iGenius: Show Briefing",
+        "icon": "$(book)"
+      },
+      {
+        "command": "igenius.searchMemories",
+        "title": "iGenius: Search Memories",
+        "icon": "$(search)"
+      },
+      {
+        "command": "igenius.ingestSelection",
+        "title": "iGenius: Ingest Selected Text",
+        "icon": "$(cloud-upload)"
+      },
+      {
+        "command": "igenius.refreshMemories",
+        "title": "iGenius: Refresh Memories",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "igenius.consolidate",
+        "title": "iGenius: Consolidate Memories"
+      },
+      {
+        "command": "igenius.openStore",
+        "title": "iGenius: Open Store (Upgrade Plan)"
+      },
+      {
+        "command": "igenius.setApiKey",
+        "title": "iGenius: Set API Key"
+      },
+      {
+        "command": "igenius.runSetup",
+        "title": "iGenius: Run Setup Wizard",
+        "icon": "$(gear)"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "igenius.showBriefing",
+        "key": "ctrl+shift+b",
+        "mac": "cmd+shift+b",
+        "when": "editorTextFocus"
+      },
+      {
+        "command": "igenius.searchMemories",
+        "key": "ctrl+shift+m",
+        "mac": "cmd+shift+m"
+      },
+      {
+        "command": "igenius.ingestSelection",
+        "key": "ctrl+shift+i",
+        "mac": "cmd+shift+i",
+        "when": "editorHasSelection"
+      }
+    ],
+    "configuration": [
+      {
+        "title": "iGenius Memory",
+        "properties": {
+          "igenius.apiKey": {
+            "type": "string",
+            "default": "",
+            "description": "Your iGenius Memory API key (starts with ig_). Get one free at https://igenius-memory.store",
+            "order": 1
+          },
+          "igenius.apiUrl": {
+            "type": "string",
+            "default": "https://igenius-memory.online/v1",
+            "description": "iGenius Memory API base URL",
+            "order": 2
+          },
+          "igenius.autoRefreshInterval": {
+            "type": "number",
+            "default": 30,
+            "minimum": 5,
+            "maximum": 300,
+            "description": "Auto-refresh interval in seconds for the memory sidebar",
+            "order": 3
+          },
+          "igenius.showStatusBar": {
+            "type": "boolean",
+            "default": true,
+            "description": "Show memory count in the status bar",
+            "order": 4
+          }
+        }
+      },
+      {
+        "title": "iGenius Memory — AI Provider",
+        "properties": {
+          "igenius.ai.provider": {
+            "type": "string",
+            "enum": [
+              "lmstudio",
+              "openai",
+              "anthropic",
+              "google"
+            ],
+            "enumDescriptions": [
+              "LM Studio — Run open-source models locally or connect to a remote LM Studio instance",
+              "OpenAI — GPT-4o, GPT-4.1, and other OpenAI models (cloud)",
+              "Anthropic — Claude Sonnet, Opus, and Haiku models (cloud)",
+              "Google — Gemini 2.0 Flash, Pro, and other Google AI models (cloud)"
+            ],
+            "default": "lmstudio",
+            "markdownDescription": "Which AI provider powers memory classification, briefing generation, and extraction.\n\n- **LM Studio** — Free, private, runs on your own hardware (local GPU or remote server)\n- **OpenAI / Anthropic / Google** — Cloud providers requiring an API key",
+            "order": 20
+          },
+          "igenius.ai.lmstudio.baseUrl": {
+            "type": "string",
+            "default": "http://localhost:1234/v1",
+            "markdownDescription": "LM Studio API endpoint.\n\n- **Local:** `http://localhost:1234/v1` (default)\n- **Remote:** Your server's URL, e.g. `http://your-server:1234/v1`",
+            "order": 21
+          },
+          "igenius.ai.lmstudio.model": {
+            "type": "string",
+            "default": "local-model",
+            "description": "Model identifier in LM Studio (e.g. qwen/qwen3.5-9b, deepseek-r1)",
+            "order": 22
+          },
+          "igenius.ai.openai.apiKey": {
+            "type": "string",
+            "default": "",
+            "markdownDescription": "Your [OpenAI API key](https://platform.openai.com/api-keys). Required when provider is set to `openai`.",
+            "order": 30
+          },
+          "igenius.ai.openai.model": {
+            "type": "string",
+            "enum": [
+              "gpt-4o",
+              "gpt-4o-mini",
+              "gpt-4.1",
+              "gpt-4.1-mini",
+              "gpt-4.1-nano",
+              "o3-mini"
+            ],
+            "default": "gpt-4o",
+            "description": "OpenAI model to use for memory processing",
+            "order": 31
+          },
+          "igenius.ai.anthropic.apiKey": {
+            "type": "string",
+            "default": "",
+            "markdownDescription": "Your [Anthropic API key](https://console.anthropic.com/settings/keys). Required when provider is set to `anthropic`.",
+            "order": 40
+          },
+          "igenius.ai.anthropic.model": {
+            "type": "string",
+            "enum": [
+              "claude-sonnet-4-20250514",
+              "claude-opus-4-20250514",
+              "claude-haiku-3-20250414",
+              "claude-3-5-sonnet-20241022"
+            ],
+            "enumDescriptions": [
+              "Claude Sonnet 4 — Best balance of speed and intelligence",
+              "Claude Opus 4 — Most capable, highest quality",
+              "Claude Haiku 3 — Fastest and most affordable",
+              "Claude 3.5 Sonnet — Previous generation, still excellent"
+            ],
+            "default": "claude-sonnet-4-20250514",
+            "description": "Anthropic model to use for memory processing",
+            "order": 41
+          },
+          "igenius.ai.google.apiKey": {
+            "type": "string",
+            "default": "",
+            "markdownDescription": "Your [Google AI API key](https://aistudio.google.com/apikey). Required when provider is set to `google`.",
+            "order": 50
+          },
+          "igenius.ai.google.model": {
+            "type": "string",
+            "enum": [
+              "gemini-2.0-flash",
+              "gemini-2.0-flash-lite",
+              "gemini-2.5-pro-preview-06-05",
+              "gemini-2.5-flash-preview-05-20"
+            ],
+            "enumDescriptions": [
+              "Gemini 2.0 Flash — Fast, versatile workhorse model",
+              "Gemini 2.0 Flash Lite — Cost-efficient for high-volume tasks",
+              "Gemini 2.5 Pro — Most capable Google model (preview)",
+              "Gemini 2.5 Flash — Balanced speed and quality (preview)"
+            ],
+            "default": "gemini-2.0-flash",
+            "description": "Google AI model to use for memory processing",
+            "order": 51
+          }
+        }
+      },
+      {
+        "title": "iGenius Memory — Pro Engine",
+        "properties": {
+          "igenius.pro.enabled": {
+            "type": "boolean",
+            "default": true,
+            "markdownDescription": "Enable **Pro Continuous Readiness** engine — keeps your briefing pre-cached for instant delivery after context summarization",
+            "order": 10
+          },
+          "igenius.pro.warmIntervalSec": {
+            "type": "number",
+            "default": 120,
+            "minimum": 30,
+            "maximum": 600,
+            "description": "How often (seconds) the Pro engine refreshes the briefing cache",
+            "order": 11
+          },
+          "igenius.pro.consolidateThreshold": {
+            "type": "number",
+            "default": 8,
+            "minimum": 3,
+            "maximum": 50,
+            "description": "Auto-consolidate memories after this many ingests",
+            "order": 12
+          }
+        }
+      }
+    ],
+    "menus": {
+      "editor/context": [
+        {
+          "command": "igenius.ingestSelection",
+          "when": "editorHasSelection",
+          "group": "igenius"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run build",
+    "build": "esbuild src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node --minify",
+    "watch": "esbuild src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node --sourcemap --watch",
+    "lint": "eslint src --ext ts",
+    "package": "npx @vscode/vsce package"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/vscode": "^1.85.0",
+    "esbuild": "^0.20.0",
+    "typescript": "^5.4.0"
+  }
+}
