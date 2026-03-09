@@ -6,7 +6,7 @@
 
 > Persistent AI memory for your coding agents. Browse, search, promote, and manage short-term and long-term memories right from VS Code.
 
-![iGenius Memory](https://igenius-memory.com/og-preview.png)
+![iGenius Memory](https://igenius-memory.com/screenshots/overview.png)
 
 ## Features
 
