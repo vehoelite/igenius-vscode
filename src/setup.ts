@@ -265,16 +265,74 @@ async function stepInstructions(): Promise<boolean> {
   return false;
 }
 
-// ── Step 4: Completion ─────────────────────────────────────
+// ── Step 4: Visual Tools ───────────────────────────────────
+async function stepVisualTools(): Promise<boolean> {
+  const choice = await vscode.window.showInformationMessage(
+    "👁️ Enable iGenius Visual? This gives your agent eyes — it can render UI, " +
+      "screenshot it with Playwright, and send it to a local vision model for " +
+      "instant visual feedback. Like a syntax check, but for UI.",
+    "Yes, set it up",
+    "What does it need?",
+    "Skip"
+  );
+
+  if (choice === "What does it need?") {
+    const info = await vscode.window.showInformationMessage(
+      "iGenius Visual requires:\n\n" +
+        "1. igenius-mcp[visual] — adds Playwright browser engine\n" +
+        "2. Chromium — headless browser for rendering\n" +
+        "3. A vision model in LM Studio (e.g. Qwen3.5-9B Vision)\n\n" +
+        "The pipeline: Your agent builds UI → Playwright renders & screenshots → " +
+        "Vision model analyzes the screenshot → Agent gets a detailed report with fixes.",
+      "Install now",
+      "Skip"
+    );
+    if (info !== "Install now") return false;
+  } else if (choice !== "Yes, set it up") {
+    return false;
+  }
+
+  // Install igenius-mcp[visual] + playwright chromium
+  const terminal = vscode.window.createTerminal("iGenius Visual Setup");
+  terminal.show();
+  terminal.sendText('pip install "igenius-mcp[visual]" && python -m playwright install chromium');
+
+  const done = await vscode.window.showInformationMessage(
+    "⏳ Installing Playwright + Chromium browser…\n\n" +
+      "This downloads ~170 MB for the headless browser. " +
+      "Click OK when the terminal shows it's finished.",
+    "OK",
+    "Cancel"
+  );
+
+  if (done !== "OK") return false;
+
+  // Remind about vision model
+  await vscode.window.showInformationMessage(
+    "🧠 Almost there! Make sure you have a vision-capable model loaded in LM Studio.\n\n" +
+      "Recommended: Qwen3.5-9B Vision (or any model with image understanding).\n" +
+      "Keep LM Studio running — the visual tools connect to it automatically.",
+    "Got it"
+  );
+
+  vscode.window.showInformationMessage(
+    "✅ iGenius Visual installed! Your agent can now use visual_report and visual_screenshot tools."
+  );
+  return true;
+}
+
+// ── Step 5: Completion ─────────────────────────────────────
 async function stepComplete(
   apiKeySet: boolean,
   mcpConfigured: boolean,
-  instructionsInstalled: boolean
+  instructionsInstalled: boolean,
+  visualInstalled: boolean
 ): Promise<void> {
   const parts: string[] = [];
   if (apiKeySet) parts.push("✅ API key saved");
   if (mcpConfigured) parts.push("✅ MCP server configured");
   if (instructionsInstalled) parts.push("✅ Agent instructions installed");
+  if (visualInstalled) parts.push("👁️ Visual tools installed");
 
   if (parts.length === 0) {
     vscode.window.showInformationMessage(
@@ -309,6 +367,7 @@ export async function runSetupWizard(
   let apiKeySet = false;
   let mcpConfigured = false;
   let instructionsInstalled = false;
+  let visualInstalled = false;
 
   // Step 1: API Key
   const apiKey = await stepApiKey();
@@ -325,18 +384,30 @@ export async function runSetupWizard(
   // Step 3: Agent Instructions
   instructionsInstalled = await stepInstructions();
 
-  // Step 4: Summary
-  await stepComplete(apiKeySet, mcpConfigured, instructionsInstalled);
+  // Step 4: Visual Tools (Playwright + Vision Model)
+  visualInstalled = await stepVisualTools();
 
-  // If API key was set, a reload is recommended for full activation
-  if (apiKeySet || mcpConfigured) {
-    const reload = await vscode.window.showInformationMessage(
-      "Reload VS Code to activate all changes?",
-      "Reload Now",
-      "Later"
+  // Step 5: Summary
+  await stepComplete(apiKeySet, mcpConfigured, instructionsInstalled, visualInstalled);
+
+  // Full restart is required for first install (activity bar, MCP, etc.)
+  if (apiKeySet || mcpConfigured || visualInstalled) {
+    const isFirst = options.isFirstInstall === true;
+    const restartMsg = isFirst
+      ? "⚠️ Important: For the first install, you need to fully CLOSE VS Code " +
+        "and reopen it (not just reload). This activates the brain icon in the " +
+        "Activity Bar, the MCP server connection, and all visual tools."
+      : "Restart VS Code to activate all changes? For best results, " +
+        "fully close and reopen VS Code (not just reload).";
+
+    const restart = await vscode.window.showWarningMessage(
+      restartMsg,
+      "Close VS Code Now",
+      "I'll restart later"
     );
-    if (reload === "Reload Now") {
-      vscode.commands.executeCommand("workbench.action.reloadWindow");
+    if (restart === "Close VS Code Now") {
+      // workbench.action.quit fully closes VS Code
+      vscode.commands.executeCommand("workbench.action.quit");
     }
   }
 }

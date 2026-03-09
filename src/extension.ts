@@ -205,12 +205,19 @@ export function activate(context: vscode.ExtensionContext) {
       } else {
         await cfg.update("apiKey", key, vscode.ConfigurationTarget.Global);
         api.setApiKey(key);
-        const reload = await vscode.window.showInformationMessage(
-          "API key saved. Reload window to ensure everything is active?",
-          "Reload Now",
+        const reload = await vscode.window.showWarningMessage(
+          "API key saved. ⚠️ For best results, fully close and reopen VS Code " +
+            "(not just reload). This ensures the brain icon, MCP server, and " +
+            "all tools activate correctly.",
+          "Close VS Code Now",
+          "Reload Window",
           "Skip"
         );
-        if (reload === "Reload Now") {
+        if (reload === "Close VS Code Now") {
+          vscode.commands.executeCommand("workbench.action.quit");
+          return;
+        }
+        if (reload === "Reload Window") {
           vscode.commands.executeCommand("workbench.action.reloadWindow");
           return;
         }
