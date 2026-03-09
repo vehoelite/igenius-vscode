@@ -227,6 +227,63 @@ export function activate(context: vscode.ExtensionContext) {
     })
   );
 
+  // ── Visual Tools ─────────────────────────────────────────
+
+  // Visual Report — prompts for URL, opens Copilot Chat with request
+  context.subscriptions.push(
+    vscode.commands.registerCommand("igenius.visualReport", async (url?: string) => {
+      const targetUrl = url || await vscode.window.showInputBox({
+        prompt: "Enter URL to analyze with iGenius Visual",
+        placeHolder: "https://example.com",
+        validateInput: (v) => {
+          if (!v) { return null; }
+          try { new URL(v); return null; } catch { return "Enter a valid URL"; }
+        },
+      });
+      if (!targetUrl) { return; }
+      try {
+        await vscode.commands.executeCommand("workbench.action.chat.open", {
+          query: `Use the visual_report tool to analyze the UI/UX of ${targetUrl}`,
+        });
+      } catch {
+        // Fallback: copy prompt to clipboard
+        await vscode.env.clipboard.writeText(
+          `Use the visual_report tool to analyze the UI/UX of ${targetUrl}`
+        );
+        vscode.window.showInformationMessage(
+          "Prompt copied to clipboard — paste it in Copilot Chat to run the analysis."
+        );
+      }
+    })
+  );
+
+  // Visual Screenshot — prompts for URL, opens Copilot Chat
+  context.subscriptions.push(
+    vscode.commands.registerCommand("igenius.visualScreenshot", async (url?: string) => {
+      const targetUrl = url || await vscode.window.showInputBox({
+        prompt: "Enter URL to screenshot with iGenius Visual",
+        placeHolder: "https://example.com",
+        validateInput: (v) => {
+          if (!v) { return null; }
+          try { new URL(v); return null; } catch { return "Enter a valid URL"; }
+        },
+      });
+      if (!targetUrl) { return; }
+      try {
+        await vscode.commands.executeCommand("workbench.action.chat.open", {
+          query: `Use the visual_screenshot tool to capture a screenshot of ${targetUrl}`,
+        });
+      } catch {
+        await vscode.env.clipboard.writeText(
+          `Use the visual_screenshot tool to capture a screenshot of ${targetUrl}`
+        );
+        vscode.window.showInformationMessage(
+          "Prompt copied to clipboard — paste it in Copilot Chat to capture the screenshot."
+        );
+      }
+    })
+  );
+
   // ── Config change listener ──────────────────────────────
   context.subscriptions.push(
     vscode.workspace.onDidChangeConfiguration((e) => {

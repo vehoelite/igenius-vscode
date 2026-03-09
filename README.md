@@ -42,6 +42,16 @@ First-time users get a guided setup wizard that:
 
 Re-run anytime via **iGenius: Run Setup Wizard** in the command palette.
 
+### 👁️ Visual Tools
+Analyze any URL's UI/UX without leaving VS Code. Enter a URL in the Visual tab and click:
+- **Analyze UI** — renders the page, takes a screenshot, and sends it to a local vision model for a full report
+- **Screenshot** — captures a pixel-perfect screenshot (no analysis)
+
+Requires `pip install "igenius-mcp[visual]"` + Playwright + a vision model in LM Studio.
+
+### ⚡ Pro Auto-Analyze
+Set a URL in settings (`igenius.pro.autoVisualUrl`) to auto-analyze on a configurable interval while you code.
+
 ## Getting Started
 
 1. **Install** the extension from the VS Code Marketplace (or `.vsix`)
@@ -83,6 +93,8 @@ The setup wizard can auto-configure this, or manually add to `~/.vscode/mcp.json
 | `iGenius: Set API Key` | — | Configure your API key |
 | `iGenius: Open Store` | — | Upgrade your plan |
 | `iGenius: Run Setup Wizard` | — | Re-run first-time setup |
+| `iGenius: Visual Report` | — | Analyze a URL's UI/UX via vision model |
+| `iGenius: Visual Screenshot` | — | Capture a URL screenshot |
 
 ## Settings
 
@@ -137,6 +149,18 @@ VS Code Extension ←→ HTTPS ←→ igenius-memory.online/v1 ←→ AI + MySQL
 - 🔌 [igenius-memory.online](https://igenius-memory.online) — API portal
 - 🛒 [igenius-memory.store](https://igenius-memory.store) — Plans & pricing
 - 📦 [igenius-mcp](https://github.com/vehoelite/igenius-mcp) — MCP server package
+
+## Support the Project
+
+iGenius Memory is built by [NovaMind Labs](https://github.com/vehoelite).
+If you find it useful, here's how to help:
+
+- **Star the repos** — [igenius-vscode](https://github.com/vehoelite/igenius-vscode) + [igenius-mcp](https://github.com/vehoelite/igenius-mcp)
+- **Upgrade to Pro** — $19/mo funds development → [igenius-memory.store](https://igenius-memory.store)
+- **Report bugs & ideas** — [open an issue](https://github.com/vehoelite/igenius-vscode/issues)
+- **Spread the word** — tell your friends, tweet, blog
+
+Every star, install, and subscription helps.
 
 ## License
 

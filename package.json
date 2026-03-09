@@ -2,7 +2,7 @@
   "name": "igenius-memory",
   "displayName": "iGenius Memory",
   "description": "Persistent AI memory for your coding agents. Browse, search, promote, and manage short-term and long-term memories right from VS Code.",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "publisher": "igenius-memory",
   "license": "MIT",
   "icon": "media/icon.png",
@@ -86,6 +86,16 @@
         "command": "igenius.runSetup",
         "title": "iGenius: Run Setup Wizard",
         "icon": "$(gear)"
+      },
+      {
+        "command": "igenius.visualReport",
+        "title": "iGenius: Visual Report — Analyze a URL",
+        "icon": "$(eye)"
+      },
+      {
+        "command": "igenius.visualScreenshot",
+        "title": "iGenius: Visual Screenshot — Capture a URL",
+        "icon": "$(device-camera)"
       }
     ],
     "keybindings": [
@@ -266,6 +276,20 @@
             "maximum": 50,
             "description": "Auto-consolidate memories after this many ingests",
             "order": 12
+          },
+          "igenius.pro.autoVisualUrl": {
+            "type": "string",
+            "default": "",
+            "markdownDescription": "URL to auto-analyze with iGenius Visual when the Pro engine runs. Leave empty to disable.\n\nExample: `http://localhost:3000` for a local dev server.",
+            "order": 13
+          },
+          "igenius.pro.autoVisualIntervalMin": {
+            "type": "number",
+            "default": 10,
+            "minimum": 2,
+            "maximum": 60,
+            "description": "How often (minutes) to auto-run visual analysis on the configured URL. Requires Pro enabled + autoVisualUrl set.",
+            "order": 14
           }
         }
       }

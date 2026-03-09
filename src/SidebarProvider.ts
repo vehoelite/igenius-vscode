@@ -173,6 +173,14 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
       case "set-api-key":
         vscode.commands.executeCommand("igenius.setApiKey");
         break;
+
+      case "visual-report":
+        vscode.commands.executeCommand("igenius.visualReport", (msg as any).url);
+        break;
+
+      case "visual-screenshot":
+        vscode.commands.executeCommand("igenius.visualScreenshot", (msg as any).url);
+        break;
     }
   }
 
@@ -413,6 +421,46 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
     display: flex; justify-content: space-between;
     font-size: 0.65rem; opacity: 0.6;
   }
+
+  /* ── Visual tools panel ─────── */
+  .visual-section { padding: 14px; }
+  .visual-section h3 {
+    font-size: 0.82rem; font-weight: 600; margin-bottom: 10px;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .visual-section p {
+    font-size: 0.75rem; opacity: 0.7; line-height: 1.5; margin-bottom: 12px;
+  }
+  .visual-input-row {
+    display: flex; gap: 6px; margin-bottom: 10px;
+  }
+  .visual-input-row input {
+    flex: 1; padding: 7px 10px;
+    background: var(--input-bg); color: var(--input-fg);
+    border: 1px solid var(--input-border); border-radius: 4px;
+    font-family: inherit; font-size: 0.78rem; outline: none;
+  }
+  .visual-input-row input:focus { border-color: var(--purple); }
+  .visual-btns { display: flex; gap: 6px; }
+  .visual-btns button {
+    flex: 1; padding: 8px 10px; border-radius: 6px;
+    font-size: 0.75rem; font-weight: 600; cursor: pointer;
+    border: 1px solid var(--border); transition: all 0.15s;
+  }
+  .visual-btns .btn-analyze {
+    background: var(--btn-bg); color: var(--btn-fg); border: none;
+  }
+  .visual-btns .btn-analyze:hover { background: var(--btn-hover); }
+  .visual-btns .btn-screenshot {
+    background: var(--input-bg); color: var(--fg);
+  }
+  .visual-btns .btn-screenshot:hover { background: var(--purple); color: #fff; border-color: var(--purple); }
+  .visual-info {
+    margin-top: 14px; padding: 10px 12px; border-radius: 6px;
+    background: rgba(139,92,246,0.08); border: 1px solid rgba(139,92,246,0.15);
+    font-size: 0.7rem; line-height: 1.6; opacity: 0.8;
+  }
+  .visual-info code { color: var(--purple); font-family: var(--vscode-editor-font-family); }
 </style>
 </head>
 <body>
@@ -453,6 +501,7 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
     <button class="tab" data-tab="short_term">Short-term<span class="count" id="count-st">0</span></button>
     <button class="tab" data-tab="briefing">Briefing</button>
     <button class="tab" data-tab="search">Search</button>
+    <button class="tab" data-tab="visual">👁️</button>
   </div>
 
   <!-- Long-term panel (hero) -->
@@ -499,6 +548,44 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
     <div class="empty-state" id="search-empty">
       <div class="emoji">🔍</div>
       <div>Type to search across all memory layers.</div>
+    </div>
+  </div>
+
+  <!-- Visual Tools panel -->
+  <div class="panel" id="panel-visual">
+    <div class="visual-section">
+      <h3>👁️ Visual Tools</h3>
+      <p>Render any URL, take a pixel-perfect screenshot, and analyze the UI/UX with a local vision model.</p>
+
+      <div class="visual-input-row">
+        <input type="text" id="visual-url" placeholder="https://example.com" />
+      </div>
+      <div class="visual-btns">
+        <button class="btn-analyze" onclick="visualAction('report')">📊 Analyze UI</button>
+        <button class="btn-screenshot" onclick="visualAction('screenshot')">📸 Screenshot</button>
+      </div>
+
+      <div class="visual-info">
+        <strong>How it works:</strong><br>
+        1. Enter a URL and click <strong>Analyze</strong> or <strong>Screenshot</strong><br>
+        2. Copilot Chat opens with the MCP tool request<br>
+        3. The MCP server renders, screenshots, and (optionally) analyzes the page<br><br>
+        <strong>Requires:</strong> <code>pip install "igenius-mcp[visual]"</code> + Playwright + a vision model in LM Studio.
+      </div>
+
+      <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border);">
+        <h3 style="font-size:0.78rem;font-weight:600;margin-bottom:8px;display:flex;align-items:center;gap:6px;">
+          ⚡ Pro Auto-Analyze
+        </h3>
+        <p style="font-size:0.7rem;opacity:0.7;line-height:1.5;margin-bottom:8px;">
+          Set a URL in settings to auto-analyze on an interval while you code.
+        </p>
+        <button onclick="msg({type:'open-settings'})" style="
+          width:100%;padding:7px;border-radius:6px;font-size:0.72rem;font-weight:600;
+          background:rgba(139,92,246,0.12);color:var(--purple);border:1px solid rgba(139,92,246,0.2);
+          cursor:pointer;
+        ">Configure Auto-Analyze →</button>
+      </div>
     </div>
   </div>
 </div>
@@ -684,6 +771,20 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
     el.style.background = isError ? '#f43f5e' : '#10b981';
     el.classList.add('show');
     setTimeout(() => { el.classList.remove('show'); el.style.background = ''; }, 3000);
+  }
+
+  // ── Visual tools ─────────────────────────────────
+  function visualAction(action) {
+    const url = document.getElementById('visual-url').value.trim();
+    if (!url) {
+      showError('Enter a URL to analyze');
+      return;
+    }
+    try { new URL(url); } catch {
+      showError('Enter a valid URL (e.g. https://example.com)');
+      return;
+    }
+    msg({ type: 'visual-' + action, url: url });
   }
 
   // ── Init ────────────────────────────────────────
