@@ -3,7 +3,7 @@
   "displayName": "iGenius Memory",
   "description": "Persistent AI memory for your coding agents. Browse, search, promote, and manage short-term and long-term memories right from VS Code.",
   "version": "0.1.0",
-  "publisher": "vehoelite",
+  "publisher": "igenius-memory",
   "license": "MIT",
   "icon": "media/icon.png",
   "repository": {

@@ -1,5 +1,9 @@
 # iGenius Memory for VS Code
 
+[![VS Code Marketplace](https://img.shields.io/visual-studio-marketplace/v/igenius-memory.igenius-memory?label=VS%20Code%20Marketplace&color=blue)](https://marketplace.visualstudio.com/items?itemName=igenius-memory.igenius-memory)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
+[![GitHub](https://img.shields.io/github/stars/vehoelite/igenius-vscode?style=social)](https://github.com/vehoelite/igenius-vscode)
+
 > Persistent AI memory for your coding agents. Browse, search, promote, and manage short-term and long-term memories right from VS Code.
 
 ![iGenius Memory](https://igenius-memory.com/og-preview.png)
