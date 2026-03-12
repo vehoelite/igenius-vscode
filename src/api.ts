@@ -53,7 +53,7 @@ export class IgeniusApi {
         headers: {
           "Content-Type": "application/json",
           "X-API-Key": this.apiKey,
-          "User-Agent": "iGenius-VSCode/0.2.0",
+          "User-Agent": "iGenius-VSCode/0.3.0",
           ...(this.providerConfig.provider && {
             "X-LLM-Provider": this.providerConfig.provider,
           }),

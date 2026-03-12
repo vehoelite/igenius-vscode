@@ -45,7 +45,7 @@ export function activate(context: vscode.ExtensionContext) {
 
   // ── Commands ────────────────────────────────────────────
 
-  // Show Briefing
+  // Show Briefing — sends to agent chat so the agent reads it
   context.subscriptions.push(
     vscode.commands.registerCommand("igenius.showBriefing", async () => {
       if (!ensureApiKey()) return;
@@ -58,11 +58,34 @@ export function activate(context: vscode.ExtensionContext) {
           },
           () => api.briefing(true)
         );
-        const doc = await vscode.workspace.openTextDocument({
-          content: briefing.briefing,
-          language: "markdown",
-        });
-        await vscode.window.showTextDocument(doc, { preview: true });
+        const text = briefing.briefing;
+        if (!text || text.trim().length === 0) {
+          vscode.window.showInformationMessage(
+            "iGenius: No briefing data available yet — start a conversation first."
+          );
+          return;
+        }
+        // Send the briefing into Copilot Chat so the agent absorbs it
+        const prompt =
+          "Here is your iGenius Memory briefing. Read it carefully — it contains " +
+          "all decisions, preferences, context, and open threads from previous sessions. " +
+          "Use this to get fully up to speed before proceeding.\n\n" +
+          text;
+        try {
+          await vscode.commands.executeCommand("workbench.action.chat.open", {
+            query: prompt,
+          });
+        } catch {
+          // Fallback: open as document if chat API unavailable
+          const doc = await vscode.workspace.openTextDocument({
+            content: text,
+            language: "markdown",
+          });
+          await vscode.window.showTextDocument(doc, { preview: true });
+          vscode.window.showInformationMessage(
+            "Briefing opened in editor — copy it into agent chat to get your agent up to speed."
+          );
+        }
       } catch (err: any) {
         vscode.window.showErrorMessage(`Briefing failed: ${err.message}`);
       }
