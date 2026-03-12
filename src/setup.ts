@@ -104,6 +104,20 @@ function getInstructionsPath(): string {
   return path.join(getPromptsDir(), "igenius.instructions.md");
 }
 
+/** Public accessor for the agent instructions file path */
+export function getInstructionsFilePath(): string {
+  return getInstructionsPath();
+}
+
+/** Ensure the agent instructions file exists, creating from template if needed */
+export function ensureInstructionsFile(): void {
+  const instrPath = getInstructionsPath();
+  ensureDir(getPromptsDir());
+  if (!fs.existsSync(instrPath)) {
+    fs.writeFileSync(instrPath, INSTRUCTIONS_CONTENT, "utf-8");
+  }
+}
+
 function ensureDir(dir: string): void {
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir, { recursive: true });

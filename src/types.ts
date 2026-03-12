@@ -71,7 +71,9 @@ export type ToWebviewMessage =
   | { type: "stats"; data: MemoryStats }
   | { type: "promote-ok"; memoryId: number }
   | { type: "delete-ok"; memoryId: number }
-  | { type: "no-api-key" };
+  | { type: "store-ok"; memory: Memory }
+  | { type: "no-api-key" }
+  | { type: "pause-state"; paused: boolean };
 
 /** Messages from webview → extension */
 export type FromWebviewMessage =
@@ -84,4 +86,10 @@ export type FromWebviewMessage =
   | { type: "refresh" }
   | { type: "open-settings" }
   | { type: "open-store" }
-  | { type: "set-api-key" };
+  | { type: "set-api-key" }
+  | { type: "add-long-term-memory" }
+  | { type: "edit-instructions" }
+  | { type: "configure-mcp-approvals" }
+  | { type: "visual-report"; url: string }
+  | { type: "visual-screenshot"; url: string }
+  | { type: "toggle-pause" };

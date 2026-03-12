@@ -85,7 +85,7 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
     }
   }
 
-  private startAutoRefresh() {
+  startAutoRefresh() {
     const seconds = vscode.workspace
       .getConfiguration("igenius")
       .get<number>("autoRefreshInterval", 30);
@@ -93,6 +93,13 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
       clearInterval(this.refreshTimer);
     }
     this.refreshTimer = setInterval(() => this.refresh(), seconds * 1000);
+  }
+
+  stopAutoRefresh() {
+    if (this.refreshTimer) {
+      clearInterval(this.refreshTimer);
+      this.refreshTimer = undefined;
+    }
   }
 
   private async handleMessage(msg: FromWebviewMessage) {
@@ -180,6 +187,22 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
 
       case "visual-screenshot":
         vscode.commands.executeCommand("igenius.visualScreenshot", (msg as any).url);
+        break;
+
+      case "add-long-term-memory":
+        vscode.commands.executeCommand("igenius.addLongTermMemory");
+        break;
+
+      case "edit-instructions":
+        vscode.commands.executeCommand("igenius.editInstructions");
+        break;
+
+      case "configure-mcp-approvals":
+        vscode.commands.executeCommand("igenius.configureMcpApprovals");
+        break;
+
+      case "toggle-pause":
+        vscode.commands.executeCommand("igenius.togglePause");
         break;
     }
   }
@@ -461,6 +484,54 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
     font-size: 0.7rem; line-height: 1.6; opacity: 0.8;
   }
   .visual-info code { color: var(--purple); font-family: var(--vscode-editor-font-family); }
+
+  /* ── Context menu ────────────── */
+  .ctx-menu {
+    position: fixed; z-index: 200;
+    background: var(--vscode-menu-background, var(--input-bg));
+    color: var(--vscode-menu-foreground, var(--fg));
+    border: 1px solid var(--vscode-menu-border, var(--border));
+    border-radius: 6px; padding: 4px 0;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+    min-width: 180px; display: none;
+  }
+  .ctx-menu.show { display: block; }
+  .ctx-menu-item {
+    padding: 6px 14px; font-size: 0.78rem;
+    cursor: pointer; display: flex; align-items: center; gap: 8px;
+    transition: background 0.1s;
+  }
+  .ctx-menu-item:hover {
+    background: var(--vscode-menu-selectionBackground, var(--btn-bg));
+    color: var(--vscode-menu-selectionForeground, var(--btn-fg));
+  }
+  .ctx-menu-sep {
+    height: 1px; background: var(--border); margin: 4px 0;
+  }
+
+  /* ── Agent Instructions button ── */
+  .instr-btn {
+    background: none; border: none; color: var(--fg);
+    cursor: pointer; padding: 4px; border-radius: 4px;
+    font-size: 0.78rem; opacity: 0.7;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .instr-btn:hover { opacity: 1; background: var(--input-bg); }
+
+  /* ── Pause banner ── */
+  .pause-banner {
+    display: none;
+    padding: 6px 14px;
+    background: rgba(245, 158, 11, 0.12);
+    border-bottom: 1px solid rgba(245, 158, 11, 0.25);
+    font-size: 0.75rem;
+    color: var(--amber);
+    text-align: center;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+  }
+  .pause-banner.show { display: block; }
+  .icon-btn.paused { color: var(--amber); opacity: 1; }
 </style>
 </head>
 <body>
@@ -484,10 +555,13 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
     <span class="logo">🧠</span>
     <h2>iGenius Memory</h2>
     <div class="header-actions">
+      <button class="icon-btn" id="pause-btn" onclick="msg({type:'toggle-pause'})" title="Pause all background activity">⏸</button>
+      <button class="icon-btn" onclick="msg({type:'edit-instructions'})" title="Edit Agent Instructions">📋</button>
       <button class="icon-btn" onclick="msg({type:'refresh'})" title="Refresh">↻</button>
       <button class="icon-btn" onclick="msg({type:'open-settings'})" title="Settings">⚙</button>
     </div>
   </div>
+  <div class="pause-banner" id="pause-banner">⏸ Background activity paused</div>
 
   <div class="stats-bar" id="stats-bar">
     <span id="stat-total">—</span>
@@ -591,6 +665,13 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
 </div>
 
 <div class="error-toast" id="error-toast"></div>
+
+<!-- Right-click context menu -->
+<div class="ctx-menu" id="ctx-menu">
+  <div class="ctx-menu-item" onclick="ctxAction('add-memory')">➕ Add Memory</div>
+  <div class="ctx-menu-sep"></div>
+  <div class="ctx-menu-item" onclick="ctxAction('refresh')">↻ Refresh</div>
+</div>
 
 <script>
   // ── VS Code API ─────────────────────────────────
@@ -755,6 +836,27 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
       case 'delete-ok':
         showToast('Memory #' + m.memoryId + ' deleted ✓', false);
         break;
+
+      case 'store-ok':
+        showToast('Memory saved: "' + (m.memory?.title || 'Untitled') + '" ✓', false);
+        break;
+
+      case 'pause-state': {
+        const btn = document.getElementById('pause-btn');
+        const banner = document.getElementById('pause-banner');
+        if (m.paused) {
+          btn.textContent = '▶';
+          btn.title = 'Resume background activity';
+          btn.classList.add('paused');
+          banner.classList.add('show');
+        } else {
+          btn.textContent = '⏸';
+          btn.title = 'Pause all background activity';
+          btn.classList.remove('paused');
+          banner.classList.remove('show');
+        }
+        break;
+      }
     }
   });
 
@@ -785,6 +887,48 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
       return;
     }
     msg({ type: 'visual-' + action, url: url });
+  }
+
+  // ── Context menu (right-click on Long-term tab) ──────────
+  const ctxMenu = document.getElementById('ctx-menu');
+
+  // Attach right-click to the Long-term tab
+  document.querySelectorAll('.tab').forEach(tab => {
+    if (tab.dataset.tab === 'long_term') {
+      tab.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+        ctxMenu.style.left = e.pageX + 'px';
+        ctxMenu.style.top = e.pageY + 'px';
+        ctxMenu.classList.add('show');
+      });
+    }
+  });
+
+  // Also allow right-click on the Long-term panel itself
+  document.getElementById('panel-long_term').addEventListener('contextmenu', (e) => {
+    // Don't override context menu on memory cards
+    if (e.target.closest('.memory-card')) return;
+    e.preventDefault();
+    ctxMenu.style.left = e.pageX + 'px';
+    ctxMenu.style.top = e.pageY + 'px';
+    ctxMenu.classList.add('show');
+  });
+
+  // Hide context menu on click anywhere
+  document.addEventListener('click', () => ctxMenu.classList.remove('show'));
+  document.addEventListener('contextmenu', (e) => {
+    if (!e.target.closest('.tab[data-tab="long_term"]') && !e.target.closest('#panel-long_term')) {
+      ctxMenu.classList.remove('show');
+    }
+  });
+
+  function ctxAction(action) {
+    ctxMenu.classList.remove('show');
+    if (action === 'add-memory') {
+      msg({ type: 'add-long-term-memory' });
+    } else if (action === 'refresh') {
+      msg({ type: 'refresh' });
+    }
   }
 
   // ── Init ────────────────────────────────────────

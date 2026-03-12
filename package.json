@@ -2,7 +2,7 @@
   "name": "igenius-memory",
   "displayName": "iGenius Memory",
   "description": "Persistent AI memory for your coding agents. Browse, search, promote, and manage short-term and long-term memories right from VS Code.",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "publisher": "igenius-memory",
   "license": "MIT",
   "icon": "media/icon.png",
@@ -96,6 +96,26 @@
         "command": "igenius.visualScreenshot",
         "title": "iGenius: Visual Screenshot — Capture a URL",
         "icon": "$(device-camera)"
+      },
+      {
+        "command": "igenius.addLongTermMemory",
+        "title": "iGenius: Add Long-Term Memory",
+        "icon": "$(add)"
+      },
+      {
+        "command": "igenius.editInstructions",
+        "title": "iGenius: Edit Agent Instructions",
+        "icon": "$(notebook)"
+      },
+      {
+        "command": "igenius.configureMcpApprovals",
+        "title": "iGenius: Configure MCP Tool Approvals",
+        "icon": "$(checklist)"
+      },
+      {
+        "command": "igenius.togglePause",
+        "title": "iGenius: Toggle Pause (Stop/Resume Background Activity)",
+        "icon": "$(debug-pause)"
       }
     ],
     "keybindings": [
@@ -146,6 +166,12 @@
             "default": true,
             "description": "Show memory count in the status bar",
             "order": 4
+          },
+          "igenius.autoApproveMcpTools": {
+            "type": "boolean",
+            "default": false,
+            "markdownDescription": "Automatically approve all iGenius MCP tools so Copilot/Claude can call them without confirmation prompts.\n\nFor granular control, use **iGenius: Configure MCP Tool Approvals** from the Command Palette.",
+            "order": 5
           }
         }
       },

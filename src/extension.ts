@@ -4,11 +4,12 @@ import { IgeniusApi } from "./api";
 import { SidebarProvider } from "./SidebarProvider";
 import { StatusBar } from "./statusbar";
 import { ProMemoryManager } from "./pro";
-import { runSetupWizard } from "./setup";
+import { runSetupWizard, getInstructionsFilePath, ensureInstructionsFile } from "./setup";
 import type { LLMProvider, ProviderConfig } from "./types";
 
 let statusBar: StatusBar | undefined;
 let proManager: ProMemoryManager | undefined;
+let paused = false;
 
 export function activate(context: vscode.ExtensionContext) {
   // ── Resolve settings ────────────────────────────────────
@@ -227,6 +228,225 @@ export function activate(context: vscode.ExtensionContext) {
     })
   );
 
+  // ── Add Long-Term Memory (manual) ────────────────────────
+  context.subscriptions.push(
+    vscode.commands.registerCommand("igenius.addLongTermMemory", async () => {
+      if (!ensureApiKey()) return;
+
+      const title = await vscode.window.showInputBox({
+        title: "iGenius — Add Long-Term Memory",
+        prompt: "Title for this memory",
+        placeHolder: "e.g. Database schema decision, API pattern, key insight…",
+        ignoreFocusOut: true,
+      });
+      if (!title) return;
+
+      const content = await vscode.window.showInputBox({
+        title: "iGenius — Add Long-Term Memory",
+        prompt: "Memory content (the knowledge you want to preserve)",
+        placeHolder: "Detailed content for the memory…",
+        ignoreFocusOut: true,
+      });
+      if (!content) return;
+
+      const catPick = await vscode.window.showQuickPick(
+        [
+          { label: "decision", description: "Architectural or design decision" },
+          { label: "knowledge", description: "Technical knowledge or fact" },
+          { label: "preference", description: "Personal or team preference" },
+          { label: "credential", description: "API key, URL, or config" },
+          { label: "procedure", description: "Step-by-step process" },
+          { label: "note", description: "General note" },
+        ],
+        {
+          title: "iGenius — Category",
+          placeHolder: "Pick a category (or press Esc for 'note')",
+        }
+      );
+      const category = catPick?.label || "note";
+
+      const impPick = await vscode.window.showQuickPick(
+        [
+          { label: "90", description: "Critical — must never forget" },
+          { label: "75", description: "High — important knowledge" },
+          { label: "50", description: "Medium — useful context" },
+          { label: "25", description: "Low — nice to have" },
+        ],
+        {
+          title: "iGenius — Importance",
+          placeHolder: "How important is this? (default: 50)",
+        }
+      );
+      const importance = impPick ? parseInt(impPick.label, 10) : 50;
+
+      try {
+        const result = await vscode.window.withProgress(
+          {
+            location: vscode.ProgressLocation.Notification,
+            title: "iGenius: Storing long-term memory…",
+            cancellable: false,
+          },
+          () => api.storeMemory(content, "long_term", title, category, importance)
+        );
+        vscode.window.showInformationMessage(
+          `✅ Long-term memory saved: "${result.title || title}"`
+        );
+        sidebarProvider.refresh();
+        statusBar?.update();
+      } catch (err: any) {
+        vscode.window.showErrorMessage(`Store failed: ${err.message}`);
+      }
+    })
+  );
+
+  // ── Edit Agent Instructions ─────────────────────────────
+  context.subscriptions.push(
+    vscode.commands.registerCommand("igenius.editInstructions", async () => {
+      const filePath = getInstructionsFilePath();
+      ensureInstructionsFile();
+
+      const doc = await vscode.workspace.openTextDocument(
+        vscode.Uri.file(filePath)
+      );
+      await vscode.window.showTextDocument(doc, {
+        preview: false,
+        viewColumn: vscode.ViewColumn.One,
+      });
+    })
+  );
+
+  // ── Configure MCP Tool Approvals ────────────────────────
+  const IGENIUS_MCP_TOOLS = [
+    { name: "memory_briefing", desc: "Generate intelligence briefing" },
+    { name: "memory_ingest", desc: "Ingest messages into memory" },
+    { name: "memory_consolidate", desc: "Merge extracts into briefing" },
+    { name: "memory_process", desc: "Process text for trigger words" },
+    { name: "memory_store", desc: "Store a memory directly" },
+    { name: "memory_search", desc: "Search across all memories" },
+    { name: "memory_recall", desc: "Retrieve raw persistent extracts" },
+    { name: "memory_summarize", desc: "Compress text using LLM" },
+    { name: "memory_delete", desc: "Delete a memory" },
+    { name: "memory_update", desc: "Update an existing memory" },
+    { name: "memory_review", desc: "List short-term memories for triage" },
+    { name: "memory_promote", desc: "Promote short-term → long-term" },
+    { name: "memory_triggers_list", desc: "List active trigger patterns" },
+    { name: "memory_triggers_add", desc: "Add a new trigger pattern" },
+    { name: "visual_report", desc: "Analyze UI/UX of a URL" },
+    { name: "visual_screenshot", desc: "Screenshot a URL" },
+  ];
+
+  /** Read current tool approval map from VS Code settings */
+  function getToolApprovalMap(): Record<string, string> {
+    return vscode.workspace
+      .getConfiguration("chat.mcp")
+      .get<Record<string, string>>("toolApproval", {});
+  }
+
+  /** Write tool approval entries for iGenius tools */
+  async function setToolApprovals(
+    tools: string[],
+    action: "allow" | "ask"
+  ): Promise<void> {
+    const current = { ...getToolApprovalMap() };
+    for (const t of tools) {
+      if (action === "allow") {
+        current[t] = "allow";
+      } else {
+        delete current[t];
+      }
+    }
+    await vscode.workspace
+      .getConfiguration("chat.mcp")
+      .update("toolApproval", current, vscode.ConfigurationTarget.Global);
+  }
+
+  // Command: granular multi-select quick pick
+  context.subscriptions.push(
+    vscode.commands.registerCommand("igenius.configureMcpApprovals", async () => {
+      const current = getToolApprovalMap();
+
+      const items = IGENIUS_MCP_TOOLS.map((t) => ({
+        label: t.name,
+        description: t.desc,
+        picked: current[t.name] === "allow",
+      }));
+
+      const picked = await vscode.window.showQuickPick(items, {
+        title: "iGenius — MCP Tool Approvals",
+        placeHolder:
+          "Check tools to auto-approve (unchecked = ask before running)",
+        canPickMany: true,
+      });
+
+      if (picked === undefined) return; // cancelled
+
+      const approved = new Set(picked.map((p) => p.label));
+      const toAllow = IGENIUS_MCP_TOOLS
+        .filter((t) => approved.has(t.name))
+        .map((t) => t.name);
+      const toAsk = IGENIUS_MCP_TOOLS
+        .filter((t) => !approved.has(t.name))
+        .map((t) => t.name);
+
+      await setToolApprovals(toAllow, "allow");
+      await setToolApprovals(toAsk, "ask");
+
+      const count = toAllow.length;
+      vscode.window.showInformationMessage(
+        `✅ ${count} tool(s) auto-approved, ${toAsk.length} set to ask.`
+      );
+    })
+  );
+
+  // Auto-approve all tools when the toggle is ON
+  async function applyAutoApprovalSetting(): Promise<void> {
+    const autoApprove = vscode.workspace
+      .getConfiguration("igenius")
+      .get<boolean>("autoApproveMcpTools", false);
+    if (autoApprove) {
+      await setToolApprovals(
+        IGENIUS_MCP_TOOLS.map((t) => t.name),
+        "allow"
+      );
+    }
+  }
+
+  // Run on activation
+  applyAutoApprovalSetting();
+
+  // ── Toggle Pause (master pause for all background activity) ──
+  context.subscriptions.push(
+    vscode.commands.registerCommand("igenius.togglePause", () => {
+      paused = !paused;
+      const autoRefresh = vscode.workspace
+        .getConfiguration("igenius")
+        .get<number>("autoRefreshInterval", 30);
+
+      if (paused) {
+        // Stop all background timers
+        statusBar?.pause();
+        sidebarProvider.stopAutoRefresh();
+        proManager?.stop();
+        vscode.window.showInformationMessage(
+          "⏸ iGenius background activity paused."
+        );
+      } else {
+        // Resume all background timers
+        statusBar?.resume(autoRefresh);
+        sidebarProvider.startAutoRefresh();
+        proManager?.start();
+        sidebarProvider.refresh(); // immediate catch-up
+        statusBar?.update();
+        vscode.window.showInformationMessage(
+          "▶ iGenius background activity resumed."
+        );
+      }
+
+      // Notify sidebar webview of state change
+      sidebarProvider.post({ type: "pause-state", paused });
+    })
+  );
+
   // ── Visual Tools ─────────────────────────────────────────
 
   // Visual Report — prompts for URL, opens Copilot Chat with request
@@ -353,6 +573,10 @@ export function activate(context: vscode.ExtensionContext) {
           statusBar.dispose();
           statusBar = undefined;
         }
+      }
+      // ── Auto-approve MCP tools toggle ─────────────────────
+      if (e.affectsConfiguration("igenius.autoApproveMcpTools")) {
+        applyAutoApprovalSetting();
       }
     })
   );
