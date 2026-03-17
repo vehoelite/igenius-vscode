@@ -12,6 +12,9 @@ let proManager: ProMemoryManager | undefined;
 let paused = false;
 
 export function activate(context: vscode.ExtensionContext) {
+  // ── Clean up stale versions from old publisher IDs ──────
+  cleanupStaleVersions();
+
   // ── Resolve settings ────────────────────────────────────
   const cfg = vscode.workspace.getConfiguration("igenius");
   const apiUrl = cfg.get<string>("apiUrl", "https://igenius-memory.online/v1");
@@ -756,4 +759,44 @@ ${facts}
     language: "markdown",
   });
   await vscode.window.showTextDocument(doc, { preview: true });
+}
+
+// ── Stale version cleanup ───────────────────────────────────
+// Old publisher IDs (e.g. "igenius") leave orphan installs that
+// shadow the current "igenius-memory" publisher build.
+function cleanupStaleVersions() {
+  const currentPublisher = "igenius-memory";
+  const currentId = `${currentPublisher}.igenius-memory`;
+  // Known old publisher IDs that shipped .vsix builds
+  const staleIds = ["igenius.igenius-memory"];
+
+  for (const oldId of staleIds) {
+    const old = vscode.extensions.getExtension(oldId);
+    if (old) {
+      vscode.window
+        .showWarningMessage(
+          `An old iGenius Memory extension ("${oldId}") is still installed and may conflict. Uninstall it?`,
+          "Uninstall Old Version",
+          "Ignore"
+        )
+        .then((choice) => {
+          if (choice === "Uninstall Old Version") {
+            vscode.commands.executeCommand(
+              "workbench.extensions.uninstallExtension",
+              oldId
+            ).then(() => {
+              vscode.window.showInformationMessage(
+                "Old iGenius extension removed. Please reload VS Code.",
+                "Reload"
+              ).then((r) => {
+                if (r === "Reload") {
+                  vscode.commands.executeCommand("workbench.action.reloadWindow");
+                }
+              });
+            });
+          }
+        });
+      break; // Only show one prompt
+    }
+  }
 }
