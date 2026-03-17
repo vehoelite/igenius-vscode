@@ -17,7 +17,7 @@ long-term, and short-term memory that survives across sessions and context reset
 ## MANDATORY: Session Start & Post-Summarization
 
 At the START of every new conversation **OR after a context summarization**,
-IMMEDIATELY call \`memory_briefing\`. A summarization is detected when you see a
+IMMEDIATELY call \`memory_consolidate\` followed by \`memory_briefing\`. A summarization is detected when you see a
 \`<conversation-summary>\` block injected into context — treat this as a new session.
 
 This returns a consolidated intelligence briefing from all previous sessions.
@@ -25,7 +25,7 @@ Read it carefully — it contains decisions, preferences, credentials, file path
 open threads, and context you would otherwise lose.
 
 Do NOT skip this step. Do NOT wait for the user to ask. Call it FIRST.
-If you detect a \`<conversation-summary>\`, your VERY FIRST action must be \`memory_briefing\`
+If you detect a \`<conversation-summary>\`, your VERY FIRST action must be \`memory_consolidate\` followed by \`memory_briefing\`
 before doing anything else — including continuing prior work.
 
 ## MANDATORY: Continuous Ingestion
@@ -37,20 +37,13 @@ For EVERY user message and EVERY significant agent response, call \`memory_inges
 This feeds the AI memory engine which extracts facts, decisions, and context automatically.
 You do NOT need to decide what's important — the memory AI handles that.
 
-## When Context Gets Large
-
-When you sense your context window is getting full (approaching summarization):
-1. Call \`memory_consolidate\` — this merges all accumulated interaction extracts into a
-   master briefing
-2. The next session will receive this briefing via \`memory_briefing\`
-
 ## Available Memory Tools
 
 | Tool | When to use |
 |------|-------------|
-| \`memory_briefing\` | **FIRST thing** in every new session |
+| \`memory_consolidate\` | **FIRST thing** in every new session (call before \`memory_briefing\`) |
+| \`memory_briefing\` | **Immediately after** \`memory_consolidate\` in every new session |
 | \`memory_ingest\` | **Every** user message and significant agent response |
-| \`memory_consolidate\` | Before context resets or when context is getting full |
 | \`memory_process\` | When text contains trigger words (passwords, URLs, configs, etc.) |
 | \`memory_search\` | When you need to find something from past sessions |
 | \`memory_review\` | When user wants to review short-term catches for triage |
