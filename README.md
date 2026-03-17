@@ -52,6 +52,32 @@ Requires `pip install "igenius-mcp[visual]"` + Playwright + a vision model in LM
 ### ⚡ Pro Auto-Analyze
 Set a URL in settings (`igenius.pro.autoVisualUrl`) to auto-analyze on a configurable interval while you code.
 
+## LLM Requirements
+
+iGenius uses an LLM backend for AI extraction and consolidation. You can use a
+**local** or **remote** provider.
+
+### Local Setup (LM Studio, Ollama, etc.)
+
+| Requirement | Minimum |
+|---|---|
+| **GPU VRAM** | 6 GB+ |
+| **Recommended model** | Qwen 3.5 4B (non-thinking) or equivalent |
+| **Context window** | 3,000+ tokens |
+
+> **⚠️ IMPORTANT: Do NOT use thinking/reasoning models** (e.g. QwQ, DeepSeek R1,
+> o1, o3). Thinking models emit `<think>` chains before the actual response,
+> which **breaks iGenius’s structured JSON extraction pipeline**. Only use
+> standard non-thinking (instruct/chat) models.
+
+**Visual tools** require a **vision-capable, non-thinking** model
+(e.g. Qwen 3.5 9B Vision).
+
+### Remote Setup (OpenAI, Anthropic, Google, etc.)
+
+No local hardware requirements — configure the provider and API key in
+extension settings.
+
 ## Getting Started
 
 1. **Install** the extension from the VS Code Marketplace (or `.vsix`)
@@ -122,7 +148,7 @@ The extension supports multiple AI providers for server-side processing:
 |---------|----------------|--------------|------------|
 | Memories | 50 | Unlimited | Custom |
 | API keys | 1 | 5 | Unlimited |
-| All 14 tools | ✓ | ✓ | ✓ |
+| All 17 tools | ✓ | ✓ | ✓ |
 | Briefing engine | ✓ | ✓ | ✓ |
 | Priority support | — | ✓ | ✓ |
 | Encryption | — | ✓ | ✓ |

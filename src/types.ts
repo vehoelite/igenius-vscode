@@ -11,13 +11,14 @@ export interface ProviderConfig {
 
 export interface Memory {
   id: number;
-  layer: "persistent" | "short_term" | "long_term";
+  layer: "persistent" | "short_term" | "long_term" | "pinned";
   title: string;
   content: string;
   category: string;
   importance: number;
   key_facts: string[];
   source: string;
+  project: string | null;
   created_at: string;
   expires_at: string | null;
 }
@@ -72,6 +73,10 @@ export type ToWebviewMessage =
   | { type: "promote-ok"; memoryId: number }
   | { type: "delete-ok"; memoryId: number }
   | { type: "store-ok"; memory: Memory }
+  | { type: "pinned-memories"; data: Memory[] }
+  | { type: "pin-stored"; memory: Memory }
+  | { type: "pin-updated"; memory: Memory }
+  | { type: "pin-deleted"; memoryId: number }
   | { type: "no-api-key" }
   | { type: "pause-state"; paused: boolean };
 
@@ -92,4 +97,8 @@ export type FromWebviewMessage =
   | { type: "configure-mcp-approvals" }
   | { type: "visual-report"; url: string }
   | { type: "visual-screenshot"; url: string }
-  | { type: "toggle-pause" };
+  | { type: "toggle-pause" }
+  | { type: "store-pin"; title: string; content: string; category: string; project: string | null }
+  | { type: "update-pin"; memoryId: number; title: string; content: string; category: string }
+  | { type: "delete-pin"; memoryId: number }
+  | { type: "get-pinned" };

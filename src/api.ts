@@ -53,7 +53,7 @@ export class IgeniusApi {
         headers: {
           "Content-Type": "application/json",
           "X-API-Key": this.apiKey,
-          "User-Agent": "iGenius-VSCode/0.3.0",
+          "User-Agent": "iGenius-VSCode/0.4.0",
           ...(this.providerConfig.provider && {
             "X-LLM-Provider": this.providerConfig.provider,
           }),
@@ -152,7 +152,8 @@ export class IgeniusApi {
     layer: string,
     title?: string,
     category?: string,
-    importance?: number
+    importance?: number,
+    project?: string | null
   ): Promise<Memory> {
     return this.request("POST", "/memories", {
       content,
@@ -160,6 +161,7 @@ export class IgeniusApi {
       title,
       category: category || "note",
       importance: importance || 50,
+      ...(project ? { project } : {}),
     });
   }
 

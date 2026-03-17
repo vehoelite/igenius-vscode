@@ -59,15 +59,17 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
 
     try {
       // Fetch all layers in parallel
-      const [shortTerm, longTerm, persistent] = await Promise.all([
+      const [shortTerm, longTerm, persistent, pinned] = await Promise.all([
         this.api.getMemoriesByLayer("short_term").catch(() => [] as Memory[]),
         this.api.getMemoriesByLayer("long_term").catch(() => [] as Memory[]),
         this.api.getMemoriesByLayer("persistent").catch(() => [] as Memory[]),
+        this.api.getMemoriesByLayer("pinned").catch(() => [] as Memory[]),
       ]);
 
       this.post({ type: "memories", layer: "short_term", data: shortTerm });
       this.post({ type: "memories", layer: "long_term", data: longTerm });
       this.post({ type: "memories", layer: "persistent", data: persistent });
+      this.post({ type: "pinned-memories", data: pinned });
 
       this.post({
         type: "stats",
@@ -75,7 +77,7 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
           persistent_count: persistent.length,
           long_term_count: longTerm.length,
           short_term_count: shortTerm.length,
-          total_count: persistent.length + longTerm.length + shortTerm.length,
+          total_count: persistent.length + longTerm.length + shortTerm.length + pinned.length,
         },
       });
     } catch (err: any) {
@@ -203,6 +205,61 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
 
       case "toggle-pause":
         vscode.commands.executeCommand("igenius.togglePause");
+        break;
+
+      case "store-pin":
+        try {
+          this.post({ type: "loading", loading: true });
+          const pinMsg = msg as any;
+          const pinMem = await this.api.storeMemory(
+            pinMsg.content,
+            "pinned",
+            pinMsg.title,
+            pinMsg.category,
+            80,
+            pinMsg.project
+          );
+          this.post({ type: "pin-stored", memory: pinMem });
+        } catch (err: any) {
+          this.post({ type: "error", message: `Pin failed: ${err.message}` });
+        } finally {
+          this.post({ type: "loading", loading: false });
+        }
+        break;
+
+      case "update-pin":
+        try {
+          this.post({ type: "loading", loading: true });
+          const upMsg = msg as any;
+          const updated = await this.api.updateMemory(upMsg.memoryId, {
+            title: upMsg.title,
+            content: upMsg.content,
+          });
+          this.post({ type: "pin-updated", memory: updated });
+        } catch (err: any) {
+          this.post({ type: "error", message: `Update failed: ${err.message}` });
+        } finally {
+          this.post({ type: "loading", loading: false });
+        }
+        break;
+
+      case "delete-pin":
+        try {
+          const delMsg = msg as any;
+          await this.api.deleteMemory(delMsg.memoryId);
+          this.post({ type: "pin-deleted", memoryId: delMsg.memoryId });
+        } catch (err: any) {
+          this.post({ type: "error", message: `Delete failed: ${err.message}` });
+        }
+        break;
+
+      case "get-pinned":
+        try {
+          const pinned = await this.api.getMemoriesByLayer("pinned");
+          this.post({ type: "pinned-memories", data: pinned });
+        } catch (err: any) {
+          this.post({ type: "error", message: `Load pins failed: ${err.message}` });
+        }
         break;
     }
   }
@@ -532,6 +589,118 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
   }
   .pause-banner.show { display: block; }
   .icon-btn.paused { color: var(--amber); opacity: 1; }
+
+  /* ── Pinned facts form ──────── */
+  .pin-form-section {
+    border-bottom: 1px solid var(--border);
+  }
+  .pin-form-header {
+    padding: 10px 14px;
+    font-size: 0.78rem; font-weight: 600;
+    cursor: pointer; display: flex;
+    justify-content: space-between; align-items: center;
+    color: var(--purple); opacity: 0.9;
+    transition: opacity 0.15s;
+  }
+  .pin-form-header:hover { opacity: 1; background: var(--input-bg); }
+  .pin-form {
+    padding: 0 14px 14px;
+  }
+  .pin-form input, .pin-form textarea, .pin-form select {
+    width: 100%; padding: 7px 10px;
+    background: var(--input-bg); color: var(--input-fg);
+    border: 1px solid var(--input-border); border-radius: 4px;
+    font-family: inherit; font-size: 0.78rem;
+    outline: none; margin-bottom: 8px; box-sizing: border-box;
+  }
+  .pin-form input:focus, .pin-form textarea:focus, .pin-form select:focus {
+    border-color: var(--purple);
+  }
+  .pin-form textarea {
+    resize: vertical; min-height: 56px; max-height: 150px;
+  }
+  .pin-form select {
+    cursor: pointer; appearance: auto;
+  }
+  .pin-form-row {
+    display: flex; gap: 8px;
+  }
+  .pin-form-row select { flex: 1.2; }
+  .pin-form-row input { flex: 1; }
+  .pin-form-actions {
+    display: flex; gap: 8px; margin-top: 4px;
+  }
+  .pin-save-btn {
+    flex: 1; padding: 8px 12px; border-radius: 6px;
+    background: var(--btn-bg); color: var(--btn-fg);
+    border: none; cursor: pointer; font-weight: 600;
+    font-size: 0.78rem; transition: background 0.15s;
+  }
+  .pin-save-btn:hover { background: var(--btn-hover); }
+  .pin-cancel-btn {
+    padding: 8px 12px; border-radius: 6px;
+    background: var(--input-bg); color: var(--fg);
+    border: 1px solid var(--border); cursor: pointer;
+    font-size: 0.78rem; transition: all 0.15s;
+  }
+  .pin-cancel-btn:hover { background: var(--border); }
+
+  /* ── Pinned card overrides ──── */
+  .pin-card {
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--border);
+    transition: background 0.1s;
+  }
+  .pin-card:hover { background: var(--input-bg); }
+  .pin-card .pin-icon {
+    font-size: 1rem; flex-shrink: 0; margin-top: 1px;
+  }
+  .pin-card .pin-body { flex: 1; min-width: 0; }
+  .pin-card .pin-title {
+    font-size: 0.8rem; font-weight: 600; line-height: 1.3;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .pin-card .pin-value {
+    font-size: 0.75rem; opacity: 0.8; margin-top: 2px;
+    line-height: 1.4;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    font-family: var(--vscode-editor-font-family, monospace);
+  }
+  .pin-card .pin-meta {
+    font-size: 0.65rem; opacity: 0.5; margin-top: 3px;
+    display: flex; gap: 8px;
+  }
+  .pin-card .pin-meta .cat-badge {
+    padding: 1px 6px; border-radius: 4px;
+    background: rgba(139,92,246,0.12); color: var(--purple);
+    font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.03em;
+  }
+  .pin-card .pin-expand {
+    display: none; margin-top: 10px;
+    padding: 10px; border-radius: 6px;
+    background: var(--bg); border: 1px solid var(--border);
+  }
+  .pin-card.expanded .pin-expand { display: block; }
+  .pin-card .pin-expand .full-content {
+    font-size: 0.78rem; line-height: 1.6;
+    white-space: pre-wrap; word-break: break-word;
+    max-height: 200px; overflow-y: auto;
+    margin-bottom: 8px;
+    font-family: var(--vscode-editor-font-family, monospace);
+  }
+  .pin-card .pin-actions {
+    display: flex; gap: 6px; margin-top: 8px;
+  }
+  .pin-card .pin-actions button {
+    padding: 4px 10px; border-radius: 4px;
+    font-size: 0.7rem; font-weight: 500;
+    cursor: pointer; border: 1px solid var(--border);
+    background: var(--input-bg); color: var(--fg);
+    transition: all 0.1s;
+  }
+  .pin-card .pin-actions .pin-delete-btn:hover {
+    background: #f43f5e; color: #fff; border-color: #f43f5e;
+  }
 </style>
 </head>
 <body>
@@ -573,6 +742,7 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
   <div class="tabs">
     <button class="tab active" data-tab="long_term">Long-term<span class="count" id="count-lt">0</span></button>
     <button class="tab" data-tab="short_term">Short-term<span class="count" id="count-st">0</span></button>
+    <button class="tab" data-tab="pinned">📌 Pins<span class="count" id="count-pin">0</span></button>
     <button class="tab" data-tab="briefing">Briefing</button>
     <button class="tab" data-tab="search">Search</button>
     <button class="tab" data-tab="visual">👁️</button>
@@ -593,6 +763,43 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
     <div class="empty-state" id="st-empty" style="display:none;">
       <div class="emoji">🕐</div>
       <div>No short-term memories.<br>They'll appear as your agent captures context.</div>
+    </div>
+  </div>
+
+  <!-- Pinned panel -->
+  <div class="panel" id="panel-pinned">
+    <!-- Add new pin form -->
+    <div class="pin-form-section">
+      <div class="pin-form-header" onclick="togglePinForm()">
+        <span>➕ Add Pinned Fact</span>
+        <span id="pin-form-arrow">▸</span>
+      </div>
+      <div class="pin-form" id="pin-form" style="display:none;">
+        <input type="text" id="pin-title" placeholder="Title (e.g. Production DB Host)" />
+        <textarea id="pin-content" placeholder="Value or details (e.g. 192.168.1.100)" rows="3"></textarea>
+        <div class="pin-form-row">
+          <select id="pin-category">
+            <option value="credential">🔑 Credential</option>
+            <option value="server">🖥️ Server / IP</option>
+            <option value="api_key">🔐 API Key</option>
+            <option value="config">⚙️ Configuration</option>
+            <option value="identity">👤 Identity</option>
+            <option value="url">🔗 URL / Endpoint</option>
+            <option value="note" selected>📝 Note</option>
+          </select>
+          <input type="text" id="pin-project" placeholder="Project (optional)" />
+        </div>
+        <div class="pin-form-actions">
+          <button class="pin-save-btn" onclick="savePin()">📌 Pin It</button>
+          <button class="pin-cancel-btn" onclick="togglePinForm()">Cancel</button>
+        </div>
+      </div>
+    </div>
+    <!-- Pinned memories list -->
+    <div id="pin-list"></div>
+    <div class="empty-state" id="pin-empty" style="display:none;">
+      <div class="emoji">📌</div>
+      <div>No pinned facts yet.<br>Pin server IPs, credentials, API keys, and other key details that persist across sessions.</div>
     </div>
   </div>
 
@@ -841,6 +1048,26 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
         showToast('Memory saved: "' + (m.memory?.title || 'Untitled') + '" ✓', false);
         break;
 
+      case 'pinned-memories':
+        pinnedMemories = m.data || [];
+        renderPins();
+        break;
+
+      case 'pin-stored':
+        showToast('📌 Pinned: "' + (m.memory?.title || '') + '"', false);
+        msg({ type: 'get-pinned' });
+        break;
+
+      case 'pin-updated':
+        showToast('💾 Updated: "' + (m.memory?.title || '') + '"', false);
+        msg({ type: 'get-pinned' });
+        break;
+
+      case 'pin-deleted':
+        showToast('Pinned fact deleted ✓', false);
+        msg({ type: 'get-pinned' });
+        break;
+
       case 'pause-state': {
         const btn = document.getElementById('pause-btn');
         const banner = document.getElementById('pause-banner');
@@ -887,6 +1114,117 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
       return;
     }
     msg({ type: 'visual-' + action, url: url });
+  }
+
+  // ── Pin form + rendering ────────────────────────
+  let pinnedMemories = [];
+
+  function togglePinForm() {
+    const f = document.getElementById('pin-form');
+    const arrow = document.getElementById('pin-form-arrow');
+    if (f.style.display === 'none') {
+      f.style.display = '';
+      arrow.textContent = '▾';
+    } else {
+      f.style.display = 'none';
+      arrow.textContent = '▸';
+      clearPinForm();
+    }
+  }
+
+  function clearPinForm() {
+    document.getElementById('pin-title').value = '';
+    document.getElementById('pin-content').value = '';
+    document.getElementById('pin-category').value = 'note';
+    document.getElementById('pin-project').value = '';
+    // Remove edit state
+    delete document.getElementById('pin-form').dataset.editId;
+    document.querySelector('.pin-save-btn').textContent = '📌 Pin It';
+  }
+
+  function savePin() {
+    const title = document.getElementById('pin-title').value.trim();
+    const content = document.getElementById('pin-content').value.trim();
+    const category = document.getElementById('pin-category').value;
+    const project = document.getElementById('pin-project').value.trim() || null;
+    const editId = document.getElementById('pin-form').dataset.editId;
+
+    if (!title) { showError('Title is required'); return; }
+    if (!content) { showError('Content/value is required'); return; }
+
+    if (editId) {
+      msg({ type: 'update-pin', memoryId: parseInt(editId), title, content, category });
+    } else {
+      msg({ type: 'store-pin', title, content, category, project });
+    }
+
+    togglePinForm();
+  }
+
+  function editPin(id) {
+    const mem = pinnedMemories.find(m => m.id === id);
+    if (!mem) return;
+
+    const f = document.getElementById('pin-form');
+    f.style.display = '';
+    f.dataset.editId = '' + id;
+    document.getElementById('pin-form-arrow').textContent = '▾';
+    document.getElementById('pin-title').value = mem.title || '';
+    document.getElementById('pin-content').value = mem.content || '';
+    document.getElementById('pin-category').value = mem.category || 'note';
+    document.getElementById('pin-project').value = mem.project || '';
+    document.querySelector('.pin-save-btn').textContent = '💾 Update';
+    document.getElementById('pin-title').focus();
+  }
+
+  const categoryIcons = {
+    credential: '🔑', server: '🖥️', api_key: '🔐',
+    config: '⚙️', identity: '👤', url: '🔗', note: '📝'
+  };
+
+  function renderPins() {
+    const list = pinnedMemories;
+    const el = document.getElementById('pin-list');
+    const emptyEl = document.getElementById('pin-empty');
+    document.getElementById('count-pin').textContent = list.length;
+
+    if (!list.length) {
+      el.innerHTML = '';
+      emptyEl.style.display = '';
+      return;
+    }
+    emptyEl.style.display = 'none';
+
+    el.innerHTML = list.map(m => {
+      const icon = categoryIcons[m.category] || '📌';
+      const date = new Date(m.created_at).toLocaleDateString('en-US', {
+        month: 'short', day: 'numeric'
+      });
+      const proj = m.project ? '<span>📁 ' + esc(m.project) + '</span>' : '';
+
+      return '<div class="pin-card" data-id="' + m.id + '" onclick="togglePinCard(this)">'
+        + '<div style="display:flex;align-items:flex-start;gap:8px;">'
+        + '<span class="pin-icon">' + icon + '</span>'
+        + '<div class="pin-body">'
+        + '<div class="pin-title">' + esc(m.title || 'Untitled') + '</div>'
+        + '<div class="pin-value">' + esc((m.content || '').substring(0, 80)) + '</div>'
+        + '<div class="pin-meta">'
+        + '<span class="cat-badge">' + esc(m.category || 'note') + '</span>'
+        + proj
+        + '<span>' + date + '</span>'
+        + '</div></div></div>'
+        + '<div class="pin-expand">'
+        + '<div class="full-content">' + esc(m.content || '') + '</div>'
+        + '<div class="pin-actions">'
+        + '<button onclick="event.stopPropagation();editPin(' + m.id + ')">✏️ Edit</button>'
+        + '<button class="pin-delete-btn" onclick="event.stopPropagation();msg({type:\\'delete-pin\\',memoryId:' + m.id + '})">✕ Delete</button>'
+        + '</div></div></div>';
+    }).join('');
+  }
+
+  function togglePinCard(card) {
+    if (event.target.closest('.pin-actions')) return;
+    card.classList.toggle('expanded');
   }
 
   // ── Context menu (right-click on Long-term tab) ──────────

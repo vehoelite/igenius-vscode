@@ -48,6 +48,7 @@ You do NOT need to decide what's important — the memory AI handles that.
 | \`memory_search\` | When you need to find something from past sessions |
 | \`memory_review\` | When user wants to review short-term catches for triage |
 | \`memory_promote\` | When user confirms a short-term memory should be kept long-term |
+| \`memory_pin\` | Pin a fact permanently (user-confirmed only). Never expires, always encrypted. |
 | \`memory_store\` | When you want to directly save something to a specific layer |
 | \`memory_delete\` | When user wants to discard a memory |
 | \`memory_recall\` | When you need raw persistent interaction extracts |
@@ -289,6 +290,11 @@ async function stepVisualTools(): Promise<boolean> {
         "1. igenius-mcp[visual] — adds Playwright browser engine\n" +
         "2. Chromium — headless browser for rendering\n" +
         "3. A vision model in LM Studio (e.g. Qwen3.5-9B Vision)\n\n" +
+        "Local GPU: 6 GB+ VRAM minimum.\n" +
+        "Recommended model: Qwen 3.5 4B (non-thinking) with 3,000+ token context\n" +
+        "for full processing/visual support.\n\n" +
+        "⚠️ Do NOT use thinking/reasoning models (QwQ, DeepSeek R1, o1, o3) —\n" +
+        "they break iGenius's structured JSON extraction.\n\n" +
         "The pipeline: Your agent builds UI → Playwright renders & screenshots → " +
         "Vision model analyzes the screenshot → Agent gets a detailed report with fixes.",
       "Install now",
@@ -314,11 +320,14 @@ async function stepVisualTools(): Promise<boolean> {
 
   if (done !== "OK") return false;
 
-  // Remind about vision model
+  // Remind about vision model + hardware requirements
   await vscode.window.showInformationMessage(
-    "🧠 Almost there! Make sure you have a vision-capable model loaded in LM Studio.\n\n" +
-      "Recommended: Qwen3.5-9B Vision (or any model with image understanding).\n" +
-      "Keep LM Studio running — the visual tools connect to it automatically.",
+    "🧠 Almost there! Make sure you have a NON-THINKING model loaded in LM Studio.\n\n" +
+      "Local GPU: 6 GB+ VRAM. Recommended: Qwen 3.5 4B non-thinking (3k+ context).\n" +
+      "For visual analysis: Qwen 3.5 9B Vision.\n\n" +
+      "⚠️ Do NOT use thinking/reasoning models (QwQ, DeepSeek R1, o1, o3) —\n" +
+      "they emit <think> chains that break iGenius's JSON extraction pipeline.\n\n" +
+      "Remote providers work too — but still avoid thinking models.",
     "Got it"
   );
 
