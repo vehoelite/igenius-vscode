@@ -14,11 +14,13 @@ export class IgeniusApi {
   private baseUrl: string;
   private apiKey: string;
   private providerConfig: ProviderConfig;
+  private project: string | null;
 
-  constructor(baseUrl: string, apiKey: string, providerConfig?: ProviderConfig) {
+  constructor(baseUrl: string, apiKey: string, providerConfig?: ProviderConfig, project?: string | null) {
     this.baseUrl = baseUrl.replace(/\/+$/, "");
     this.apiKey = apiKey;
     this.providerConfig = providerConfig ?? { provider: "lmstudio" };
+    this.project = project ?? null;
   }
 
   setApiKey(key: string) {
@@ -33,6 +35,14 @@ export class IgeniusApi {
     this.providerConfig = config;
   }
 
+  setProject(project: string | null) {
+    this.project = project;
+  }
+
+  getProject(): string | null {
+    return this.project;
+  }
+
   // ── Core request helper ──────────────────────────────────
   private request<T>(
     method: string,
@@ -42,8 +52,23 @@ export class IgeniusApi {
   ): Promise<T> {
     return new Promise((resolve, reject) => {
       const url = new URL(this.baseUrl + path);
+
+      // Auto-inject project as query param for GET requests
+      if (this.project && method === "GET" && !url.searchParams.has("project")) {
+        url.searchParams.set("project", this.project);
+      }
+
       const isHttps = url.protocol === "https:";
       const lib = isHttps ? https : http;
+
+      // Auto-inject project into POST/PATCH body
+      let finalBody = body;
+      if (this.project && (method === "POST" || method === "PATCH") && body && typeof body === "object") {
+        const obj = body as Record<string, unknown>;
+        if (!("project" in obj) || obj.project === undefined) {
+          finalBody = { ...obj, project: this.project };
+        }
+      }
 
       const options: http.RequestOptions = {
         method,
@@ -99,8 +124,8 @@ export class IgeniusApi {
         reject(new Error("Request timeout"));
       });
 
-      if (body) {
-        req.write(JSON.stringify(body));
+      if (finalBody) {
+        req.write(JSON.stringify(finalBody));
       }
       req.end();
     });

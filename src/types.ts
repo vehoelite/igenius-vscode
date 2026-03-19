@@ -78,7 +78,8 @@ export type ToWebviewMessage =
   | { type: "pin-updated"; memory: Memory }
   | { type: "pin-deleted"; memoryId: number }
   | { type: "no-api-key" }
-  | { type: "pause-state"; paused: boolean };
+  | { type: "pause-state"; paused: boolean }
+  | { type: "project-changed"; project: string | null };
 
 /** Messages from webview → extension */
 export type FromWebviewMessage =
@@ -98,6 +99,7 @@ export type FromWebviewMessage =
   | { type: "visual-report"; url: string }
   | { type: "visual-screenshot"; url: string }
   | { type: "toggle-pause" }
+  | { type: "set-project" };
   | { type: "store-pin"; title: string; content: string; category: string; project: string | null }
   | { type: "update-pin"; memoryId: number; title: string; content: string; category: string }
   | { type: "delete-pin"; memoryId: number }

@@ -1,0 +1,454 @@
+/* ── iGenius Memory — Sidebar Styles ─────────────── */
+
+:root {
+  --bg: var(--vscode-sideBar-background);
+  --fg: var(--vscode-sideBar-foreground);
+  --border: var(--vscode-panel-border);
+  --input-bg: var(--vscode-input-background);
+  --input-fg: var(--vscode-input-foreground);
+  --input-border: var(--vscode-input-border);
+  --btn-bg: var(--vscode-button-background);
+  --btn-fg: var(--vscode-button-foreground);
+  --btn-hover: var(--vscode-button-hoverBackground);
+  --badge-bg: var(--vscode-badge-background);
+  --badge-fg: var(--vscode-badge-foreground);
+  --link: var(--vscode-textLink-foreground);
+  --error: var(--vscode-errorForeground);
+  --success: #10b981;
+  --purple: #8b5cf6;
+  --amber: #f59e0b;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: var(--vscode-font-family);
+  font-size: var(--vscode-font-size);
+  color: var(--fg);
+  background: var(--bg);
+  padding: 0;
+  overflow-x: hidden;
+}
+
+/* ── Header ─────────────────── */
+.header {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 8px;
+}
+.header .logo { font-size: 1.1rem; }
+.header h2 { font-size: 0.85rem; font-weight: 600; flex: 1; }
+.header-actions { display: flex; gap: 4px; }
+.icon-btn {
+  background: none; border: none; color: var(--fg);
+  cursor: pointer; padding: 4px; border-radius: 4px;
+  font-size: 0.85rem; opacity: 0.7;
+  display: flex; align-items: center; justify-content: center;
+}
+.icon-btn:hover { opacity: 1; background: var(--input-bg); }
+
+/* ── Tabs ────────────────────── */
+.tabs {
+  display: flex; border-bottom: 1px solid var(--border);
+  background: var(--bg);
+  position: sticky; top: 0; z-index: 10;
+}
+.tab {
+  flex: 1; padding: 8px 4px; text-align: center;
+  font-size: 0.72rem; font-weight: 500; cursor: pointer;
+  border-bottom: 2px solid transparent;
+  color: var(--fg); opacity: 0.6;
+  background: none; border-top: none; border-left: none; border-right: none;
+  transition: all 0.15s;
+}
+.tab:hover { opacity: 0.85; }
+.tab.active {
+  opacity: 1; border-bottom-color: var(--purple);
+  font-weight: 600;
+}
+.tab .count {
+  display: inline-block;
+  background: var(--badge-bg); color: var(--badge-fg);
+  font-size: 0.6rem; padding: 1px 5px; border-radius: 8px;
+  margin-left: 4px; min-width: 16px; text-align: center;
+}
+
+/* ── Search ─────────────────── */
+.search-bar {
+  padding: 8px 14px;
+  border-bottom: 1px solid var(--border);
+}
+.search-bar input {
+  width: 100%; padding: 6px 10px;
+  background: var(--input-bg); color: var(--input-fg);
+  border: 1px solid var(--input-border); border-radius: 4px;
+  font-family: inherit; font-size: 0.8rem;
+  outline: none;
+}
+.search-bar input:focus { border-color: var(--purple); }
+
+/* ── Panel content ──────────── */
+.panel { display: none; padding: 0; }
+.panel.active { display: block; }
+
+/* ── Memory card ────────────── */
+.memory-card {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  transition: background 0.1s;
+}
+.memory-card:hover { background: var(--input-bg); }
+.memory-card.expanded { background: var(--input-bg); }
+
+.card-header {
+  display: flex; align-items: flex-start; gap: 8px;
+}
+.card-importance {
+  width: 6px; min-height: 24px; border-radius: 3px;
+  flex-shrink: 0; margin-top: 2px;
+}
+.imp-high { background: #f43f5e; }
+.imp-med { background: var(--amber); }
+.imp-low { background: var(--success); }
+
+.card-body { flex: 1; min-width: 0; }
+.card-title {
+  font-size: 0.8rem; font-weight: 600;
+  line-height: 1.3;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.card-meta {
+  font-size: 0.68rem; opacity: 0.6; margin-top: 2px;
+  display: flex; gap: 8px; flex-wrap: wrap;
+}
+.card-meta .layer-badge {
+  padding: 1px 6px; border-radius: 4px; font-weight: 500;
+  font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.03em;
+}
+.layer-short_term { background: rgba(245,158,11,0.15); color: var(--amber); }
+.layer-long_term { background: rgba(139,92,246,0.15); color: var(--purple); }
+.layer-persistent { background: rgba(59,130,246,0.15); color: #60a5fa; }
+
+/* Expanded card content */
+.card-expand {
+  display: none; margin-top: 10px;
+  padding: 10px; border-radius: 6px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+}
+.memory-card.expanded .card-expand { display: block; }
+
+.card-expand .content-text {
+  font-size: 0.78rem; line-height: 1.6;
+  white-space: pre-wrap; word-break: break-word;
+  max-height: 200px; overflow-y: auto;
+  margin-bottom: 8px;
+}
+.card-expand .facts-list {
+  list-style: none; margin: 8px 0;
+}
+.card-expand .facts-list li {
+  font-size: 0.72rem; padding: 3px 0;
+  display: flex; align-items: flex-start; gap: 6px;
+}
+.card-expand .facts-list li::before {
+  content: "•"; color: var(--purple); font-weight: bold; flex-shrink: 0;
+}
+.card-actions {
+  display: flex; gap: 6px; margin-top: 8px;
+}
+.card-actions button {
+  padding: 4px 10px; border-radius: 4px;
+  font-size: 0.7rem; font-weight: 500;
+  cursor: pointer; border: 1px solid var(--border);
+  background: var(--input-bg); color: var(--fg);
+  transition: all 0.1s;
+}
+.card-actions button:hover { background: var(--btn-bg); color: var(--btn-fg); }
+.card-actions .promote-btn:hover { background: var(--purple); color: #fff; border-color: var(--purple); }
+.card-actions .delete-btn:hover { background: #f43f5e; color: #fff; border-color: #f43f5e; }
+
+/* ── Briefing panel ─────────── */
+.briefing-content {
+  padding: 14px; font-size: 0.8rem; line-height: 1.7;
+  white-space: pre-wrap; word-break: break-word;
+}
+
+/* ── Empty / loading / error ── */
+.empty-state {
+  padding: 32px 14px; text-align: center;
+  font-size: 0.8rem; opacity: 0.5;
+}
+.empty-state .emoji { font-size: 2rem; margin-bottom: 8px; }
+
+.loading-bar {
+  height: 2px; background: var(--purple);
+  animation: loading 1.2s ease-in-out infinite;
+  display: none;
+}
+.loading-bar.active { display: block; }
+@keyframes loading {
+  0% { width: 0; margin-left: 0; }
+  50% { width: 60%; margin-left: 20%; }
+  100% { width: 0; margin-left: 100%; }
+}
+
+.error-toast {
+  position: fixed; bottom: 8px; left: 8px; right: 8px;
+  background: #f43f5e; color: #fff;
+  padding: 8px 12px; border-radius: 6px;
+  font-size: 0.75rem; z-index: 100;
+  display: none; animation: slideUp 0.2s ease-out;
+}
+.error-toast.show { display: block; }
+@keyframes slideUp { from { transform: translateY(10px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+/* ── No API key state ───────── */
+.no-key-state {
+  padding: 24px 14px; text-align: center;
+}
+.no-key-state .emoji { font-size: 2.5rem; margin-bottom: 12px; }
+.no-key-state h3 { font-size: 0.95rem; margin-bottom: 8px; }
+.no-key-state p { font-size: 0.78rem; opacity: 0.7; margin-bottom: 16px; line-height: 1.5; }
+.no-key-state button {
+  padding: 8px 16px; border-radius: 6px;
+  background: var(--btn-bg); color: var(--btn-fg);
+  border: none; cursor: pointer; font-weight: 600;
+  font-size: 0.8rem; margin: 4px;
+}
+.no-key-state button:hover { background: var(--btn-hover); }
+.no-key-state .ghost-btn {
+  background: transparent; color: var(--link);
+  border: 1px solid var(--border);
+}
+
+/* ── Stats bar ──────────────── */
+.stats-bar {
+  padding: 6px 14px;
+  border-bottom: 1px solid var(--border);
+  display: flex; justify-content: space-between;
+  font-size: 0.65rem; opacity: 0.6;
+}
+
+/* ── Project bar ────────────── */
+.project-bar {
+  padding: 5px 14px;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 6px;
+  cursor: pointer;
+  transition: background 0.15s;
+  font-size: 0.72rem;
+}
+.project-bar:hover { background: var(--input-bg); }
+.project-bar .project-icon { font-size: 0.78rem; opacity: 0.8; }
+.project-bar .project-name {
+  flex: 1;
+  font-weight: 600;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.project-bar .project-edit {
+  opacity: 0; font-size: 0.7rem; transition: opacity 0.15s;
+}
+.project-bar:hover .project-edit { opacity: 0.6; }
+.project-bar.scoped .project-name { color: var(--purple); }
+.project-bar.global .project-name { opacity: 0.5; font-style: italic; }
+
+/* ── Visual tools panel ─────── */
+.visual-section { padding: 14px; }
+.visual-section h3 {
+  font-size: 0.82rem; font-weight: 600; margin-bottom: 10px;
+  display: flex; align-items: center; gap: 6px;
+}
+.visual-section p {
+  font-size: 0.75rem; opacity: 0.7; line-height: 1.5; margin-bottom: 12px;
+}
+.visual-input-row {
+  display: flex; gap: 6px; margin-bottom: 10px;
+}
+.visual-input-row input {
+  flex: 1; padding: 7px 10px;
+  background: var(--input-bg); color: var(--input-fg);
+  border: 1px solid var(--input-border); border-radius: 4px;
+  font-family: inherit; font-size: 0.78rem; outline: none;
+}
+.visual-input-row input:focus { border-color: var(--purple); }
+.visual-btns { display: flex; gap: 6px; }
+.visual-btns button {
+  flex: 1; padding: 8px 10px; border-radius: 6px;
+  font-size: 0.75rem; font-weight: 600; cursor: pointer;
+  border: 1px solid var(--border); transition: all 0.15s;
+}
+.visual-btns .btn-analyze {
+  background: var(--btn-bg); color: var(--btn-fg); border: none;
+}
+.visual-btns .btn-analyze:hover { background: var(--btn-hover); }
+.visual-btns .btn-screenshot {
+  background: var(--input-bg); color: var(--fg);
+}
+.visual-btns .btn-screenshot:hover { background: var(--purple); color: #fff; border-color: var(--purple); }
+.visual-info {
+  margin-top: 14px; padding: 10px 12px; border-radius: 6px;
+  background: rgba(139,92,246,0.08); border: 1px solid rgba(139,92,246,0.15);
+  font-size: 0.7rem; line-height: 1.6; opacity: 0.8;
+}
+.visual-info code { color: var(--purple); font-family: var(--vscode-editor-font-family); }
+
+/* ── Context menu ────────────── */
+.ctx-menu {
+  position: fixed; z-index: 200;
+  background: var(--vscode-menu-background, var(--input-bg));
+  color: var(--vscode-menu-foreground, var(--fg));
+  border: 1px solid var(--vscode-menu-border, var(--border));
+  border-radius: 6px; padding: 4px 0;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+  min-width: 180px; display: none;
+}
+.ctx-menu.show { display: block; }
+.ctx-menu-item {
+  padding: 6px 14px; font-size: 0.78rem;
+  cursor: pointer; display: flex; align-items: center; gap: 8px;
+  transition: background 0.1s;
+}
+.ctx-menu-item:hover {
+  background: var(--vscode-menu-selectionBackground, var(--btn-bg));
+  color: var(--vscode-menu-selectionForeground, var(--btn-fg));
+}
+.ctx-menu-sep {
+  height: 1px; background: var(--border); margin: 4px 0;
+}
+
+/* ── Agent Instructions button ── */
+.instr-btn {
+  background: none; border: none; color: var(--fg);
+  cursor: pointer; padding: 4px; border-radius: 4px;
+  font-size: 0.78rem; opacity: 0.7;
+  display: flex; align-items: center; justify-content: center;
+}
+.instr-btn:hover { opacity: 1; background: var(--input-bg); }
+
+/* ── Pause banner ── */
+.pause-banner {
+  display: none;
+  padding: 6px 14px;
+  background: rgba(245, 158, 11, 0.12);
+  border-bottom: 1px solid rgba(245, 158, 11, 0.25);
+  font-size: 0.75rem;
+  color: var(--amber);
+  text-align: center;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+.pause-banner.show { display: block; }
+.icon-btn.paused { color: var(--amber); opacity: 1; }
+
+/* ── Pinned facts form ──────── */
+.pin-form-section {
+  border-bottom: 1px solid var(--border);
+}
+.pin-form-header {
+  padding: 10px 14px;
+  font-size: 0.78rem; font-weight: 600;
+  cursor: pointer; display: flex;
+  justify-content: space-between; align-items: center;
+  color: var(--purple); opacity: 0.9;
+  transition: opacity 0.15s;
+}
+.pin-form-header:hover { opacity: 1; background: var(--input-bg); }
+.pin-form {
+  padding: 0 14px 14px;
+}
+.pin-form input, .pin-form textarea, .pin-form select {
+  width: 100%; padding: 7px 10px;
+  background: var(--input-bg); color: var(--input-fg);
+  border: 1px solid var(--input-border); border-radius: 4px;
+  font-family: inherit; font-size: 0.78rem;
+  outline: none; margin-bottom: 8px; box-sizing: border-box;
+}
+.pin-form input:focus, .pin-form textarea:focus, .pin-form select:focus {
+  border-color: var(--purple);
+}
+.pin-form textarea {
+  resize: vertical; min-height: 56px; max-height: 150px;
+}
+.pin-form select {
+  cursor: pointer; appearance: auto;
+}
+.pin-form-row {
+  display: flex; gap: 8px;
+}
+.pin-form-row select { flex: 1.2; }
+.pin-form-row input { flex: 1; }
+.pin-form-actions {
+  display: flex; gap: 8px; margin-top: 4px;
+}
+.pin-save-btn {
+  flex: 1; padding: 8px 12px; border-radius: 6px;
+  background: var(--btn-bg); color: var(--btn-fg);
+  border: none; cursor: pointer; font-weight: 600;
+  font-size: 0.78rem; transition: background 0.15s;
+}
+.pin-save-btn:hover { background: var(--btn-hover); }
+.pin-cancel-btn {
+  padding: 8px 12px; border-radius: 6px;
+  background: var(--input-bg); color: var(--fg);
+  border: 1px solid var(--border); cursor: pointer;
+  font-size: 0.78rem; transition: all 0.15s;
+}
+.pin-cancel-btn:hover { background: var(--border); }
+
+/* ── Pinned card overrides ──── */
+.pin-card {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border);
+  transition: background 0.1s;
+}
+.pin-card:hover { background: var(--input-bg); }
+.pin-card .pin-icon {
+  font-size: 1rem; flex-shrink: 0; margin-top: 1px;
+}
+.pin-card .pin-body { flex: 1; min-width: 0; }
+.pin-card .pin-title {
+  font-size: 0.8rem; font-weight: 600; line-height: 1.3;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.pin-card .pin-value {
+  font-size: 0.75rem; opacity: 0.8; margin-top: 2px;
+  line-height: 1.4;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  font-family: var(--vscode-editor-font-family, monospace);
+}
+.pin-card .pin-meta {
+  font-size: 0.65rem; opacity: 0.5; margin-top: 3px;
+  display: flex; gap: 8px;
+}
+.pin-card .pin-meta .cat-badge {
+  padding: 1px 6px; border-radius: 4px;
+  background: rgba(139,92,246,0.12); color: var(--purple);
+  font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.03em;
+}
+.pin-card .pin-expand {
+  display: none; margin-top: 10px;
+  padding: 10px; border-radius: 6px;
+  background: var(--bg); border: 1px solid var(--border);
+}
+.pin-card.expanded .pin-expand { display: block; }
+.pin-card .pin-expand .full-content {
+  font-size: 0.78rem; line-height: 1.6;
+  white-space: pre-wrap; word-break: break-word;
+  max-height: 200px; overflow-y: auto;
+  margin-bottom: 8px;
+  font-family: var(--vscode-editor-font-family, monospace);
+}
+.pin-card .pin-actions {
+  display: flex; gap: 6px; margin-top: 8px;
+}
+.pin-card .pin-actions button {
+  padding: 4px 10px; border-radius: 4px;
+  font-size: 0.7rem; font-weight: 500;
+  cursor: pointer; border: 1px solid var(--border);
+  background: var(--input-bg); color: var(--fg);
+  transition: all 0.1s;
+}
+.pin-card .pin-actions .pin-delete-btn:hover {
+  background: #f43f5e; color: #fff; border-color: #f43f5e;
+}

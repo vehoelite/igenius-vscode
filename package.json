@@ -2,7 +2,7 @@
   "name": "igenius-memory",
   "displayName": "iGenius Memory",
   "description": "Persistent AI memory for your coding agents. Browse, search, promote, and manage short-term and long-term memories right from VS Code.",
-  "version": "0.4.1",
+  "version": "0.5.1",
   "publisher": "igenius-memory",
   "license": "MIT",
   "icon": "media/icon.png",
@@ -116,6 +116,11 @@
         "command": "igenius.togglePause",
         "title": "iGenius: Toggle Pause (Stop/Resume Background Activity)",
         "icon": "$(debug-pause)"
+      },
+      {
+        "command": "igenius.setProject",
+        "title": "iGenius: Set Active Project",
+        "icon": "$(folder)"
       }
     ],
     "keybindings": [
@@ -167,6 +172,12 @@
             "description": "Show memory count in the status bar",
             "order": 4
           },
+          "igenius.project": {
+            "type": "string",
+            "default": "auto",
+            "markdownDescription": "Active project name for memory isolation. Each project gets its own memory space.\n\n- **auto** (default) — auto-detects from your workspace folder name\n- **any string** — use a custom project name\n- **empty** — global scope (no project isolation)",
+            "order": 5
+          },
           "igenius.autoApproveMcpTools": {
             "type": "boolean",
             "default": false,
@@ -204,8 +215,8 @@
           },
           "igenius.ai.lmstudio.model": {
             "type": "string",
-            "default": "local-model",
-            "description": "Model identifier in LM Studio (e.g. qwen/qwen3.5-9b, deepseek-r1)",
+            "default": "",
+            "description": "Model identifier in LM Studio (e.g. qwen/qwen3.5-4b, deepseek-r1). Leave empty to use the server's default model.",
             "order": 22
           },
           "igenius.ai.openai.apiKey": {
@@ -316,6 +327,22 @@
             "maximum": 60,
             "description": "How often (minutes) to auto-run visual analysis on the configured URL. Requires Pro enabled + autoVisualUrl set.",
             "order": 14
+          },
+          "igenius.pro.visualStrictness": {
+            "type": "integer",
+            "default": 2,
+            "minimum": 1,
+            "maximum": 5,
+            "enum": [1, 2, 3, 4, 5],
+            "enumDescriptions": [
+              "Gentle — celebrate wins, only mention serious issues",
+              "Supportive — positives first, gentle suggestions (default)",
+              "Balanced — honest feedback, strengths + improvements",
+              "Thorough — detailed, direct, no sugarcoating",
+              "Brutal — nitpick everything, no mercy"
+            ],
+            "markdownDescription": "How critical should `visual_report` be when analyzing your UI?\n\n`1` = Gentle · `2` = Supportive · `3` = Balanced · `4` = Thorough · `5` = Brutal",
+            "order": 15
           }
         }
       }

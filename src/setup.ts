@@ -69,9 +69,15 @@ You do NOT need to decide what's important — the memory AI handles that.
 
 // ── MCP server JSON block ──────────────────────────────────
 function buildMcpEntry(apiKey: string): object {
+  const strictness = vscode.workspace
+    .getConfiguration("igenius.pro")
+    .get<number>("visualStrictness", 2);
   return {
     command: "igenius-mcp",
-    env: { IGENIUS_API_KEY: apiKey },
+    env: {
+      IGENIUS_API_KEY: apiKey,
+      IGENIUS_VISUAL_STRICTNESS: String(strictness),
+    },
     type: "stdio",
   };
 }

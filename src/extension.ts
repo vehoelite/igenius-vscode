@@ -22,12 +22,30 @@ export function activate(context: vscode.ExtensionContext) {
   const autoRefresh = cfg.get<number>("autoRefreshInterval", 30);
   const showStatusBar = cfg.get<boolean>("showStatusBar", true);
 
+  // ── Project resolution ──────────────────────────────────
+  function resolveProject(): string | null {
+    const raw = vscode.workspace
+      .getConfiguration("igenius")
+      .get<string>("project", "auto");
+    if (!raw || raw === "") return null; // global scope
+    if (raw === "auto") {
+      // Auto-detect from first workspace folder name
+      const folders = vscode.workspace.workspaceFolders;
+      if (folders && folders.length > 0) {
+        return folders[0].name;
+      }
+      return null;
+    }
+    return raw;
+  }
+  const activeProject = resolveProject();
+
   // ── AI Provider config ──────────────────────────────────
   const aiCfg = vscode.workspace.getConfiguration("igenius.ai");
   const providerConfig = readProviderConfig(aiCfg);
 
   // ── API client ──────────────────────────────────────────
-  const api = new IgeniusApi(apiUrl, apiKey, providerConfig);
+  const api = new IgeniusApi(apiUrl, apiKey, providerConfig, activeProject);
 
   // ── Sidebar ─────────────────────────────────────────────
   const sidebarProvider = new SidebarProvider(context.extensionUri, api);
@@ -473,6 +491,33 @@ export function activate(context: vscode.ExtensionContext) {
     })
   );
 
+  // ── Set Active Project ──────────────────────────────────
+  context.subscriptions.push(
+    vscode.commands.registerCommand("igenius.setProject", async () => {
+      const current = resolveProject();
+      const value = await vscode.window.showInputBox({
+        title: "iGenius — Set Active Project",
+        prompt: "Project name for memory isolation (leave empty for global, 'auto' to detect from workspace)",
+        value: vscode.workspace.getConfiguration("igenius").get<string>("project", "auto"),
+        placeHolder: "e.g. my-app, website, auto",
+      });
+      if (value === undefined) return; // cancelled
+      await vscode.workspace
+        .getConfiguration("igenius")
+        .update("project", value || "auto", vscode.ConfigurationTarget.Global);
+      const newProject = resolveProject();
+      api.setProject(newProject);
+      sidebarProvider.post({ type: "project-changed", project: newProject });
+      sidebarProvider.refresh();
+      statusBar?.update();
+      vscode.window.showInformationMessage(
+        newProject
+          ? `📁 Active project set to "${newProject}"`
+          : "🌐 Switched to global scope (no project isolation)"
+      );
+    })
+  );
+
   // ── Visual Tools ─────────────────────────────────────────
 
   // Visual Report — prompts for URL, opens Copilot Chat with request
@@ -487,14 +532,17 @@ export function activate(context: vscode.ExtensionContext) {
         },
       });
       if (!targetUrl) { return; }
+      const strictness = vscode.workspace
+        .getConfiguration("igenius.pro")
+        .get<number>("visualStrictness", 2);
       try {
         await vscode.commands.executeCommand("workbench.action.chat.open", {
-          query: `Use the visual_report tool to analyze the UI/UX of ${targetUrl}`,
+          query: `Use the visual_report tool to analyze the UI/UX of ${targetUrl} with strictness=${strictness}`,
         });
       } catch {
         // Fallback: copy prompt to clipboard
         await vscode.env.clipboard.writeText(
-          `Use the visual_report tool to analyze the UI/UX of ${targetUrl}`
+          `Use the visual_report tool to analyze the UI/UX of ${targetUrl} with strictness=${strictness}`
         );
         vscode.window.showInformationMessage(
           "Prompt copied to clipboard — paste it in Copilot Chat to run the analysis."
@@ -604,6 +652,14 @@ export function activate(context: vscode.ExtensionContext) {
       if (e.affectsConfiguration("igenius.autoApproveMcpTools")) {
         applyAutoApprovalSetting();
       }
+      // ── Project change ────────────────────────────────────
+      if (e.affectsConfiguration("igenius.project")) {
+        const newProject = resolveProject();
+        api.setProject(newProject);
+        sidebarProvider.post({ type: "project-changed", project: newProject });
+        sidebarProvider.refresh();
+        statusBar?.update();
+      }
     })
   );
 
@@ -709,8 +765,8 @@ function readProviderConfig(
     default:
       return {
         provider: "lmstudio",
-        baseUrl: aiCfg.get<string>("lmstudio.baseUrl", "http://localhost:1234/v1"),
-        model: aiCfg.get<string>("lmstudio.model", "local-model"),
+        baseUrl: aiCfg.get<string>("lmstudio.baseUrl", ""),
+        model: aiCfg.get<string>("lmstudio.model", ""),
       };
   }
 }
