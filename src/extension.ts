@@ -522,7 +522,7 @@ export function activate(context: vscode.ExtensionContext) {
 
   // Visual Report — prompts for URL, opens Copilot Chat with request
   context.subscriptions.push(
-    vscode.commands.registerCommand("igenius.visualReport", async (url?: string) => {
+    vscode.commands.registerCommand("igenius.visualReport", async (url?: string, sidebarStrictness?: number) => {
       const targetUrl = url || await vscode.window.showInputBox({
         prompt: "Enter URL to analyze with iGenius Visual",
         placeHolder: "https://example.com",
@@ -532,7 +532,7 @@ export function activate(context: vscode.ExtensionContext) {
         },
       });
       if (!targetUrl) { return; }
-      const strictness = vscode.workspace
+      const strictness = sidebarStrictness || vscode.workspace
         .getConfiguration("igenius.pro")
         .get<number>("visualStrictness", 2);
       try {

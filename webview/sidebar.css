@@ -272,6 +272,19 @@ body {
   font-family: inherit; font-size: 0.78rem; outline: none;
 }
 .visual-input-row input:focus { border-color: var(--purple); }
+.visual-strictness-row {
+  display: flex; align-items: center; gap: 8px; margin-bottom: 10px;
+}
+.visual-strictness-row label {
+  font-size: 0.72rem; opacity: 0.7; white-space: nowrap;
+}
+.visual-strictness-row select {
+  flex: 1; padding: 5px 8px;
+  background: var(--input-bg); color: var(--input-fg);
+  border: 1px solid var(--input-border); border-radius: 4px;
+  font-family: inherit; font-size: 0.72rem; outline: none; cursor: pointer;
+}
+.visual-strictness-row select:focus { border-color: var(--purple); }
 .visual-btns { display: flex; gap: 6px; }
 .visual-btns button {
   flex: 1; padding: 8px 10px; border-radius: 6px;

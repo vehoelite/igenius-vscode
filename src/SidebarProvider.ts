@@ -197,7 +197,7 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
         break;
 
       case "visual-report":
-        vscode.commands.executeCommand("igenius.visualReport", (msg as any).url);
+        vscode.commands.executeCommand("igenius.visualReport", (msg as any).url, (msg as any).strictness);
         break;
 
       case "visual-screenshot":
@@ -441,6 +441,16 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
 
       <div class="visual-input-row">
         <input type="text" id="visual-url" placeholder="https://example.com" />
+      </div>
+      <div class="visual-strictness-row">
+        <label for="visual-strictness">Review tone:</label>
+        <select id="visual-strictness">
+          <option value="1">1 — Gentle</option>
+          <option value="2" selected>2 — Supportive</option>
+          <option value="3">3 — Balanced</option>
+          <option value="4">4 — Thorough</option>
+          <option value="5">5 — Brutal</option>
+        </select>
       </div>
       <div class="visual-btns">
         <button class="btn-analyze" onclick="visualAction('report')">📊 Analyze UI</button>

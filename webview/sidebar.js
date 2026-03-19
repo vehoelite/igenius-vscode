@@ -257,7 +257,8 @@ function visualAction(action) {
     showError('Enter a valid URL (e.g. https://example.com)');
     return;
   }
-  msg({ type: 'visual-' + action, url: url });
+  const strictness = parseInt(document.getElementById('visual-strictness').value) || 2;
+  msg({ type: 'visual-' + action, url: url, strictness: strictness });
 }
 
 // ── Pin form + rendering ──────────────────────────
